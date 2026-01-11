@@ -1,0 +1,46 @@
+{
+  "name": "mgc-calendar-mcp",
+  "version": "1.0.0",
+  "description": "Universal calendar manager for Claude using ICS files - no OAuth required",
+  "type": "module",
+  "main": "./build/index.js",
+  "bin": {
+    "mgc-calendar-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node build/index.js",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "calendar",
+    "ics",
+    "icalendar",
+    "claude",
+    "model-context-protocol"
+  ],
+  "author": "James Murrell",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cs97jjm3/mgc-calendar-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cs97jjm3/mgc-calendar-mcp/issues"
+  },
+  "homepage": "https://github.com/cs97jjm3/mgc-calendar-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^11.8.1",
+    "ical-generator": "^8.0.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
