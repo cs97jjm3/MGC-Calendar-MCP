@@ -7,6 +7,9 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { z, ZodError } from 'zod';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 import * as db from './database.js';
 import { generateICS, getOutputDirectory } from './ics-generator.js';
 
@@ -21,6 +24,9 @@ const server = new Server(
     },
   }
 );
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Tool schemas
 const CreateEventSchema = z.object({
@@ -123,6 +129,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             id: { type: 'number', description: 'Event ID' },
           },
           required: ['id'],
+        },
+      },
+      {
+        name: 'launch_dashboard',
+        description: 'Launch the MGC Calendar web dashboard at http://localhost:3737. Opens browser with calendar views, content editor, and LinkedIn posting features.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
         },
       },
     ],
@@ -255,6 +269,43 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             },
           ],
         };
+      }
+
+      case 'launch_dashboard': {
+        try {
+          // Spawn the dashboard server
+          const dashboardProcess = spawn('node', [__dirname + '/dashboard.js'], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          dashboardProcess.unref();
+
+          // Open browser after a short delay
+          setTimeout(() => {
+            const url = 'http://localhost:3737';
+            const start = process.platform === 'darwin' ? 'open' :
+                         process.platform === 'win32' ? 'start' : 'xdg-open';
+            spawn(start, [url], { shell: true });
+          }, 1000);
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `MGC Calendar Dashboard launching...\n\nDashboard URL: http://localhost:3737\n\nOpening in your default browser.\n\nFeatures:\n- Month/Week/List calendar views\n- Article content editor\n- LinkedIn posting (copies content to clipboard)\n- Full CRUD operations\n\nTo stop the dashboard, close the browser tab and restart Claude Desktop.`,
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Failed to launch dashboard: ${error}\n\nYou can manually start it with: npm run dashboard`,
+              },
+            ],
+          };
+        }
       }
 
       default:

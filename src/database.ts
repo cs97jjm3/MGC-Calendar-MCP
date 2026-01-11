@@ -32,10 +32,18 @@ db.exec(`
     startTime TEXT DEFAULT '',
     endTime TEXT DEFAULT '',
     allDay INTEGER DEFAULT 0,
+    content TEXT DEFAULT '',
     createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
     updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+// Add content column if it doesn't exist (migration)
+try {
+  db.exec(`ALTER TABLE events ADD COLUMN content TEXT DEFAULT ''`);
+} catch (e) {
+  // Column already exists, ignore
+}
 
 export function generateUID(): string {
   const timestamp = Date.now();
@@ -50,8 +58,8 @@ export function createEvent(input: CreateEventInput): CalendarEvent {
   const allDay = input.allDay ? 1 : 0;
 
   const stmt = db.prepare(`
-    INSERT INTO events (uid, title, description, location, startDate, endDate, startTime, endTime, allDay)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO events (uid, title, description, location, startDate, endDate, startTime, endTime, allDay, content)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const result = stmt.run(
@@ -63,7 +71,8 @@ export function createEvent(input: CreateEventInput): CalendarEvent {
     endDate,
     input.startTime || '',
     endTime,
-    allDay
+    allDay,
+    input.content || ''
   );
 
   return getEvent(result.lastInsertRowid as number)!;
@@ -129,6 +138,10 @@ export function updateEvent(input: UpdateEventInput): CalendarEvent | null {
   if (input.allDay !== undefined) {
     updates.push('allDay = ?');
     values.push(input.allDay ? 1 : 0);
+  }
+  if (input.content !== undefined) {
+    updates.push('content = ?');
+    values.push(input.content);
   }
 
   updates.push('updatedAt = CURRENT_TIMESTAMP');

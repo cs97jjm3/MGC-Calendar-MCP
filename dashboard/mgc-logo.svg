@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+  
+  <!-- MGC Letters with modern geometric style -->
+  <g fill="white">
+    <!-- M -->
+    <path d="M 40 130 L 40 70 L 55 90 L 70 70 L 70 130 L 60 130 L 60 95 L 55 105 L 50 95 L 50 130 Z"/>
+    
+    <!-- G -->
+    <path d="M 90 70 L 125 70 L 125 80 L 100 80 L 100 90 L 120 90 L 120 120 Q 120 130 110 130 L 90 130 Q 80 130 80 120 L 80 80 Q 80 70 90 70 Z M 100 100 L 100 120 L 110 120 L 110 100 Z"/>
+    
+    <!-- C -->
+    <path d="M 135 70 L 170 70 L 170 80 L 145 80 L 145 120 L 170 120 L 170 130 L 135 130 Q 125 130 125 120 L 125 80 Q 125 70 135 70 Z"/>
+  </g>
+  
+  <!-- Subtitle -->
+  <text x="100" y="165" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" font-weight="600">
+    CALENDAR
+  </text>
+</svg>

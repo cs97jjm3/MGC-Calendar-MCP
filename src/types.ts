@@ -9,6 +9,7 @@ export interface CalendarEvent {
   startTime: string;
   endTime: string;
   allDay: boolean;
+  content: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +23,7 @@ export interface CreateEventInput {
   endDate?: string;
   endTime?: string;
   allDay?: boolean;
+  content?: string;
 }
 
 export interface UpdateEventInput {
@@ -34,4 +36,5 @@ export interface UpdateEventInput {
   endDate?: string;
   endTime?: string;
   allDay?: boolean;
+  content?: string;
 }
