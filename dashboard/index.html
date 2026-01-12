@@ -623,7 +623,10 @@
                 <button class="view-btn" onclick="switchView('week')">Week</button>
                 <button class="view-btn" onclick="switchView('list')">List</button>
             </div>
-            <button class="btn" onclick="showCreateModal()">+ Create Event</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="downloadAllICS()">💾 Download All ICS</button>
+                <button class="btn" onclick="showCreateModal()">+ Create Event</button>
+            </div>
         </div>
 
         <!-- Month View -->
@@ -718,6 +721,7 @@
 
                 <div class="modal-actions">
                     <button type="button" class="btn btn-success" onclick="postEventToLinkedIn()" id="postEventLinkedInBtn">📤 Post to LinkedIn</button>
+                    <button type="button" class="btn btn-secondary" onclick="downloadEventICS()" id="downloadICSBtn">💾 Download ICS</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn">Save Event</button>
                 </div>
@@ -1147,6 +1151,70 @@
 
         function closeModal() {
             document.getElementById('eventModal').classList.remove('active');
+        }
+
+        // ============================================
+        // ICS DOWNLOAD
+        // ============================================
+        /**
+         * Download ICS file for the current event being edited.
+         * Fetches the ICS file from the server and triggers browser download.
+         */
+        async function downloadEventICS() {
+            const eventId = document.getElementById('eventId').value;
+            if (!eventId) {
+                alert('Please save the event first before downloading ICS.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/events/${eventId}/ics`);
+                if (!response.ok) throw new Error('Failed to download ICS');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `event-${eventId}.ics`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Failed to download ICS:', error);
+                alert('Failed to download ICS file. The file might not exist yet.');
+            }
+        }
+
+        /**
+         * Download all events as a single combined ICS file.
+         * Creates a calendar file with all events that can be imported at once.
+         */
+        async function downloadAllICS() {
+            if (events.length === 0) {
+                alert('No events to download.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/events/all/ics');
+                if (!response.ok) throw new Error('Failed to download all ICS');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mgc-calendar-all-events.ics`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                alert(`✅ Downloaded ${events.length} events as ICS file!\n\nYou can now import this into any calendar app.`);
+            } catch (error) {
+                console.error('Failed to download all ICS:', error);
+                alert('Failed to download ICS file.');
+            }
         }
 
         // ============================================

@@ -133,6 +133,63 @@ function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
     return;
   }
 
+  // GET /api/events/:id/ics - Download single event ICS
+  if (req.method === 'GET' && url.pathname.match(/\/api\/events\/\d+\/ics$/)) {
+    const id = parseInt(url.pathname.split('/')[3]);
+    const event = getEvent(id);
+    if (event) {
+      const icsPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files', `${event.uid}.ics`);
+      if (fs.existsSync(icsPath)) {
+        const icsContent = fs.readFileSync(icsPath, 'utf-8');
+        res.setHeader('Content-Type', 'text/calendar');
+        res.setHeader('Content-Disposition', `attachment; filename="event-${id}.ics"`);
+        res.writeHead(200);
+        res.end(icsContent);
+      } else {
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: 'ICS file not found' }));
+      }
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Event not found' }));
+    }
+    return;
+  }
+
+  // GET /api/events/all/ics - Download all events as single ICS
+  if (req.method === 'GET' && url.pathname === '/api/events/all/ics') {
+    const events = listEvents();
+    if (events.length === 0) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'No events found' }));
+      return;
+    }
+
+    // Combine all ICS files into one
+    const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
+    let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
+    
+    events.forEach(event => {
+      const icsPath = path.join(icsDir, `${event.uid}.ics`);
+      if (fs.existsSync(icsPath)) {
+        const icsContent = fs.readFileSync(icsPath, 'utf-8');
+        // Extract VEVENT section from each file
+        const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
+        if (veventMatch) {
+          combinedICS += veventMatch[0] + '\r\n';
+        }
+      }
+    });
+    
+    combinedICS += 'END:VCALENDAR\r\n';
+    
+    res.setHeader('Content-Type', 'text/calendar');
+    res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-all-events.ics"');
+    res.writeHead(200);
+    res.end(combinedICS);
+    return;
+  }
+
   res.writeHead(404);
   res.end(JSON.stringify({ error: 'Not found' }));
 }
