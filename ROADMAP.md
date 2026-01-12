@@ -17,16 +17,10 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 - ✅ Content editor with character counter
 - ✅ LinkedIn posting integration
 - ⏳ Bulk import/export operations
-- ⏳ Search and filtering in dashboard
 - ⏳ Event categories/tags
+- [ ] Articles scheduled vs published
 
 ### Technical Improvements
-- [ ] Unit tests for database operations
-- [ ] Integration tests for ICS generation
-- [ ] API endpoint tests
-- [ ] Error handling improvements
-- [ ] Input validation enhancements
-
 ### Documentation
 - [ ] API documentation for dashboard endpoints
 - [ ] Architecture documentation
@@ -40,45 +34,22 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 
 ### Dashboard Improvements
 - [ ] Dark mode toggle
-- [ ] Keyboard shortcuts
-- [ ] Drag-and-drop event editing
-- [ ] Quick-add event from any view
-- [ ] Print-friendly calendar view
 
 ### Search and Filter
 - [ ] Search events by title, description, location
-- [ ] Filter by date range
-- [ ] Filter by tags/categories
-- [ ] Sort options (date, title, created, updated)
 
-### Event Templates
-- [ ] Save event as template
-- [ ] Create event from template
-- [ ] Pre-populated fields for common event types
-- [ ] Article schedule templates
+
 
 ---
 
 ## Version 2.0 - Automation and Sync
 **Target: Q2 2026**
 
-### Automated Calendar Sync
-**Goal:** Remove manual ICS import step
-
-Current flow:
-1. Create event in Claude
-2. Generate ICS file
-3. Import ICS file to calendar
-
-Target flow:
-1. Create event in Claude
-2. Event automatically appears in calendar
 
 **Implementation options being evaluated:**
 - CalDAV integration (standard protocol)
 - Platform-specific APIs (optional OAuth for those who want it)
 - Local calendar file watchers
-- Browser extension for direct calendar access
 
 **Design principle:** Maintain zero-config as default, add sync as optional feature.
 
@@ -89,24 +60,12 @@ Target flow:
 - [ ] Exception dates
 - [ ] Generate ICS with RRULE
 
-### Enhanced Content Management
-- [ ] Multiple content versions per event
-- [ ] Content history/versioning
-- [ ] Markdown support in content editor
-- [ ] Auto-save drafts
-- [ ] Export content to Markdown files
 
 ---
 
 ## Version 2.1 - Analytics and Intelligence
 **Target: Q3 2026**
 
-### Writing Analytics
-- [ ] Articles scheduled vs published
-- [ ] Average time between drafts
-- [ ] Content velocity trends
-- [ ] Busiest writing days/times
-- [ ] Goal tracking (e.g., "2 articles per week")
 
 ### Smart Scheduling
 - [ ] Suggest optimal posting times based on past data
@@ -114,11 +73,7 @@ Target flow:
 - [ ] Recommend gaps for new articles
 - [ ] Notification for upcoming deadlines
 
-### Reporting
-- [ ] Weekly summary reports
-- [ ] Monthly content calendar
-- [ ] Export reports as PDF
-- [ ] Email digest option (if users want it)
+
 
 ---
 
