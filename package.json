@@ -1,6 +1,6 @@
 {
   "name": "mgc-calendar-mcp",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Universal calendar manager for Claude using ICS files - no OAuth required. Features web dashboard, content editor, and LinkedIn integration.",
   "type": "module",
   "main": "./build/index.js",

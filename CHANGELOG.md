@@ -2,6 +2,33 @@
 
 All notable changes to MGC Calendar MCP will be documented in this file.
 
+## [1.1.0] - 2026-01-12
+
+### Added
+- **Import/Export:** Bulk import events from ICS or JSON files
+- **Import/Export:** Export all events as ICS or JSON
+- **Tags:** Event categorization with six predefined tags (LinkedIn, Meeting, Deadline, Personal, Client, Internal)
+- **Tags:** Colored badge display for tags in calendar views
+- **Status Tracking:** Scheduled vs Published status for events
+- **Status Tracking:** Visual indicators (blue for scheduled, green for published)
+- **Status Tracking:** "Mark as published" quick action checkbox
+- **Status Tracking:** Published date tracking
+- **Database:** Automatic migration for existing databases to add new columns
+- **API:** POST /api/import endpoint for importing events
+- **API:** GET /api/export?format=json|ics endpoint for exporting events
+- **API:** POST /api/events/:id/publish endpoint for marking events as published
+- **UI:** Import button in dashboard controls
+- **UI:** Export button with format selection
+- **UI:** Tags selector in event creation/edit form
+- **UI:** Status radio buttons (Scheduled/Published)
+- **UI:** Published date field
+
+### Changed
+- Event interface now includes tags, status, and publishedDate fields
+- List view displays tags as colored badges
+- List view shows status indicators and published dates
+- Event cards styled with status-based border colors
+
 ## [1.0.3] - 2026-01-12
 
 ### Changed

@@ -48,10 +48,30 @@ async function initDb() {
       endTime TEXT DEFAULT '',
       allDay INTEGER DEFAULT 0,
       content TEXT DEFAULT '',
+      tags TEXT DEFAULT '',
+      status TEXT DEFAULT 'scheduled',
+      publishedDate TEXT DEFAULT NULL,
       createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
       updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+  
+  // Add migration for existing databases
+  try {
+    db.run(`ALTER TABLE events ADD COLUMN tags TEXT DEFAULT ''`);
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    db.run(`ALTER TABLE events ADD COLUMN status TEXT DEFAULT 'scheduled'`);
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    db.run(`ALTER TABLE events ADD COLUMN publishedDate TEXT DEFAULT NULL`);
+  } catch (e) {
+    // Column already exists
+  }
   
   saveDb();
 }
@@ -89,11 +109,14 @@ export function createEvent(input: CreateEventInput): CalendarEvent {
   const endDate = input.endDate || input.startDate;
   const endTime = input.endTime || input.startTime || '';
   const allDay = input.allDay ? 1 : 0;
+  const tags = input.tags || '';
+  const status = input.status || 'scheduled';
+  const publishedDate = input.publishedDate || null;
 
   db.run(
-    `INSERT INTO events (uid, title, description, location, startDate, endDate, startTime, endTime, allDay, content)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [uid, input.title, input.description || '', input.location || '', input.startDate, endDate, input.startTime || '', endTime, allDay, input.content || '']
+    `INSERT INTO events (uid, title, description, location, startDate, endDate, startTime, endTime, allDay, content, tags, status, publishedDate)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [uid, input.title, input.description || '', input.location || '', input.startDate, endDate, input.startTime || '', endTime, allDay, input.content || '', tags, status, publishedDate]
   );
   
   saveDb();
@@ -198,6 +221,18 @@ export function updateEvent(input: UpdateEventInput): CalendarEvent | null {
     updates.push('content = ?');
     values.push(input.content);
   }
+  if (input.tags !== undefined) {
+    updates.push('tags = ?');
+    values.push(input.tags);
+  }
+  if (input.status !== undefined) {
+    updates.push('status = ?');
+    values.push(input.status);
+  }
+  if (input.publishedDate !== undefined) {
+    updates.push('publishedDate = ?');
+    values.push(input.publishedDate);
+  }
 
   updates.push('updatedAt = CURRENT_TIMESTAMP');
   values.push(input.id);
@@ -226,6 +261,48 @@ export function closeDatabase(): void {
   if (db) {
     db.close();
   }
+}
+
+export function markAsPublished(id: number): CalendarEvent | null {
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
+  
+  const now = new Date().toISOString();
+  
+  db.run(
+    `UPDATE events SET status = 'published', publishedDate = ?, updatedAt = ? WHERE id = ?`,
+    [now, now, id]
+  );
+  
+  saveDb();
+  return getEvent(id);
+}
+
+export function importEvents(events: CreateEventInput[]): { success: number; failed: number; errors: string[] } {
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
+  
+  let success = 0;
+  let failed = 0;
+  const errors: string[] = [];
+  
+  for (const event of events) {
+    try {
+      createEvent(event);
+      success++;
+    } catch (error) {
+      failed++;
+      errors.push(`Failed to import "${event.title}": ${error}`);
+    }
+  }
+  
+  return { success, failed, errors };
+}
+
+export function exportEvents(): CalendarEvent[] {
+  return listEvents();
 }
 
 // Export the initialization function

@@ -10,15 +10,17 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 ---
 
 ## Version 1.1 - Enhanced Dashboard
-**Target: February 2026**
+**Released: January 2026**
 
-### Features In Progress
+### Features Completed
 - ✅ Web dashboard with Month/Week/List views
 - ✅ Content editor with character counter
 - ✅ LinkedIn posting integration
-- ⏳ Bulk import/export operations
-- ⏳ Event categories/tags
-- [ ] Articles scheduled vs published
+- ✅ Bulk import/export operations (ICS and JSON)
+- ✅ Event categories/tags (LinkedIn, Meeting, Deadline, Personal, Client, Internal)
+- ✅ Scheduled vs Published status tracking
+- ✅ "Mark as published" quick action
+- ✅ Published date tracking
 
 ### Documentation
 - [ ] API documentation for dashboard endpoints
@@ -142,7 +144,7 @@ Optional synchronization with external calendars for users who want it.
 | Version | Release Date | Key Features |
 |---------|--------------|--------------|
 | 1.0.0   | Jan 2026 | Initial release, web dashboard, LinkedIn integration |
-| 1.1.0   | Feb 2026 (planned) | Bulk operations, search, filtering |
+| 1.1.0   | Jan 2026 | Import/export, tags, status tracking |
 | 1.2.0   | Mar 2026 (planned) | Dark mode, templates, UX improvements |
 | 2.0.0   | Q2 2026 (planned) | Auto-sync, recurring events, versioning |
 | 2.1.0   | Q3 2026 (planned) | Analytics, smart scheduling |

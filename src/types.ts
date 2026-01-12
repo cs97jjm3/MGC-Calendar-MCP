@@ -10,6 +10,9 @@ export interface CalendarEvent {
   endTime: string;
   allDay: boolean;
   content: string;
+  tags: string;
+  status: 'scheduled' | 'published';
+  publishedDate: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -24,6 +27,9 @@ export interface CreateEventInput {
   endTime?: string;
   allDay?: boolean;
   content?: string;
+  tags?: string;
+  status?: 'scheduled' | 'published';
+  publishedDate?: string | null;
 }
 
 export interface UpdateEventInput {
@@ -37,4 +43,7 @@ export interface UpdateEventInput {
   endTime?: string;
   allDay?: boolean;
   content?: string;
+  tags?: string;
+  status?: 'scheduled' | 'published';
+  publishedDate?: string | null;
 }

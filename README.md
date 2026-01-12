@@ -13,6 +13,9 @@ MGC Calendar Manager lets Claude create, update, and delete calendar events usin
 - ✅ Store article content directly in events
 - ✅ Web dashboard with Month/Week/List views
 - ✅ Content editor with LinkedIn posting
+- ✅ Import/Export events (ICS and JSON formats)
+- ✅ Event tags/categories for organization
+- ✅ Scheduled vs Published status tracking
 - ✅ No API keys, no OAuth, no cloud dependencies
 
 ## Dashboard Features
@@ -38,6 +41,14 @@ Launch the web dashboard from Claude Desktop:
 - Upcoming events
 - Events this month
 - Events with content
+
+**Organization & Import/Export:**
+- Tag events (LinkedIn, Meeting, Deadline, Personal, Client, Internal)
+- Track scheduled vs published status
+- Import events from ICS or JSON files
+- Export all events as ICS or JSON
+- Color-coded status indicators (blue=scheduled, green=published)
+- Quick "Mark as published" checkbox
 
 ## Installation
 
@@ -337,7 +348,14 @@ Make sure you're importing from:
 
 ## Version History
 
-**v1.0.0** (January 11, 2026)
+**v1.1.0** (January 2026)
+- Bulk import/export (ICS and JSON formats)
+- Event tags/categories with colored badges
+- Scheduled vs Published status tracking
+- "Mark as published" quick action
+- Published date tracking
+
+**v1.0.0** (January 2026)
 - Initial release
 - Basic CRUD operations
 - ICS file generation

@@ -546,6 +546,81 @@
             display: none !important;
         }
 
+        .tags-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tags-selector label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .tags-selector input[type="checkbox"] {
+            width: auto;
+        }
+
+        .status-selector {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-selector label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: normal;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-right: 4px;
+            margin-top: 4px;
+        }
+
+        .tag-linkedin { background: #0077b5; color: white; }
+        .tag-meeting { background: #4CAF50; color: white; }
+        .tag-deadline { background: #f44336; color: white; }
+        .tag-personal { background: #9C27B0; color: white; }
+        .tag-client { background: #FF9800; color: white; }
+        .tag-internal { background: #607D8B; color: white; }
+
+        .status-scheduled {
+            border-left: 4px solid #2196F3;
+        }
+
+        .status-published {
+            border-left: 4px solid #4CAF50;
+            background-color: #f1f8f4;
+        }
+
+        .status-icon {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 18px;
+            margin-left: 8px;
+        }
+
+        .publish-checkbox {
+            font-size: 13px;
+            color: #666;
+            cursor: pointer;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .char-count {
             text-align: right;
             font-size: 12px;
@@ -623,7 +698,10 @@
                 <button class="view-btn" onclick="switchView('week')">Week</button>
                 <button class="view-btn" onclick="switchView('list')">List</button>
             </div>
-            <div style="display: flex; gap: 10px;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="file" id="importFile" accept=".ics,.json" style="display:none" onchange="handleImport()">
+                <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
+                <button class="btn btn-secondary" onclick="showExportMenu()">📤 Export</button>
                 <button class="btn btn-secondary" onclick="downloadAllICS()">💾 Download All ICS</button>
                 <button class="btn" onclick="showCreateModal()">+ Create Event</button>
             </div>
@@ -719,6 +797,31 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>Tags</label>
+                    <div class="tags-selector">
+                        <label><input type="checkbox" class="tag-checkbox" value="LinkedIn"> LinkedIn</label>
+                        <label><input type="checkbox" class="tag-checkbox" value="Meeting"> Meeting</label>
+                        <label><input type="checkbox" class="tag-checkbox" value="Deadline"> Deadline</label>
+                        <label><input type="checkbox" class="tag-checkbox" value="Personal"> Personal</label>
+                        <label><input type="checkbox" class="tag-checkbox" value="Client"> Client</label>
+                        <label><input type="checkbox" class="tag-checkbox" value="Internal"> Internal</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="status-selector">
+                        <label><input type="radio" name="status" value="scheduled" checked> Scheduled</label>
+                        <label><input type="radio" name="status" value="published"> Published</label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="published-date-group" style="display: none;">
+                    <label for="publishedDate">Published Date</label>
+                    <input type="date" id="publishedDate">
+                </div>
+
                 <div class="modal-actions">
                     <button type="button" class="btn btn-success" onclick="postEventToLinkedIn()" id="postEventLinkedInBtn">📤 Post to LinkedIn</button>
                     <button type="button" class="btn btn-secondary" onclick="downloadEventICS()" id="downloadICSBtn">💾 Download ICS</button>
@@ -775,6 +878,14 @@
             
             // Update character count on content textarea
             document.getElementById('content').addEventListener('input', updateCharCount);
+            
+            // Handle status radio button changes
+            document.querySelectorAll('input[name="status"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const publishedGroup = document.getElementById('published-date-group');
+                    publishedGroup.style.display = e.target.value === 'published' ? 'block' : 'none';
+                });
+            });
         });
 
         // ============================================
@@ -1010,22 +1121,38 @@
 
             container.innerHTML = events.map(event => {
                 const hasContent = (event.description || '').trim().length >= 100;
+                const isPublished = event.status === 'published';
+                const statusClass = isPublished ? 'status-published' : 'status-scheduled';
+                const tags = (event.tags || '').split(',').filter(t => t.trim());
+                const tagBadges = tags.map(tag => 
+                    `<span class="tag-badge tag-${tag.toLowerCase()}">${tag}</span>`
+                ).join('');
+                
                 return `
-                <div class="event-item">
+                <div class="event-item ${statusClass}">
                     <div class="event-details">
                         <h3>
                             ${escapeHtml(event.title)}
+                            ${isPublished ? '<span class="status-icon">✓</span>' : ''}
                             ${hasContent ? '<span class="content-indicator">Has Content</span>' : ''}
                         </h3>
+                        ${tagBadges ? `<div style="margin-top: 8px;">${tagBadges}</div>` : ''}
                         <div class="event-meta">
                             <div class="event-date">
                                 ${formatDate(event.startDate)}
                                 ${event.startTime ? ' at ' + event.startTime : ''}
                                 ${event.allDay ? ' (All Day)' : ''}
+                                ${isPublished ? ` - Published ${formatDate(event.publishedDate || event.startDate)}` : ''}
                             </div>
                             ${event.location ? `<div>📍 ${escapeHtml(event.location)}</div>` : ''}
                             ${event.description ? `<div>${escapeHtml(event.description)}</div>` : ''}
                         </div>
+                        ${!isPublished ? `
+                            <label class="publish-checkbox">
+                                <input type="checkbox" onchange="markPublished(${event.id})">
+                                Mark as published
+                            </label>
+                        ` : ''}
                     </div>
                     <div class="event-actions">
                         <button class="btn btn-success btn-small" onclick="editContent(${event.id})">
@@ -1128,6 +1255,19 @@
             document.getElementById('startTime').value = event.startTime || '';
             document.getElementById('endTime').value = event.endTime || '';
             document.getElementById('allDay').checked = event.allDay;
+            
+            // Set tags
+            const tags = (event.tags || '').split(',').filter(t => t.trim());
+            document.querySelectorAll('.tag-checkbox').forEach(checkbox => {
+                checkbox.checked = tags.includes(checkbox.value);
+            });
+            
+            // Set status
+            const status = event.status || 'scheduled';
+            document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
+            document.getElementById('published-date-group').style.display = status === 'published' ? 'block' : 'none';
+            document.getElementById('publishedDate').value = event.publishedDate || '';
+            
             document.getElementById('eventModal').classList.add('active');
         }
 
@@ -1305,10 +1445,82 @@
             }
         }
 
+        // ============================================
+        // IMPORT/EXPORT
+        // ============================================
+        async function handleImport() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            try {
+                const content = await file.text();
+                const response = await fetch('/api/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: content
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ Import complete!\n\nSuccessfully imported: ${result.success}\nFailed: ${result.failed}`);
+                    if (result.errors && result.errors.length > 0) {
+                        console.error('Import errors:', result.errors);
+                    }
+                    await loadEvents();
+                } else {
+                    alert(`❌ Import failed: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Failed to import file');
+            }
+            
+            // Reset file input
+            fileInput.value = '';
+        }
+        
+        function showExportMenu() {
+            const format = prompt('Export format:\n\nEnter "json" for JSON\nEnter "ics" for ICS calendar file', 'json');
+            if (format === 'json' || format === 'ics') {
+                exportEvents(format);
+            } else if (format !== null) {
+                alert('Invalid format. Please enter "json" or "ics"');
+            }
+        }
+        
+        function exportEvents(format) {
+            window.location.href = `/api/export?format=${format}`;
+        }
+        
+        // ============================================
+        // MARK AS PUBLISHED
+        // ============================================
+        async function markPublished(id) {
+            try {
+                const response = await fetch(`/api/events/${id}/publish`, { method: 'POST' });
+                if (response.ok) {
+                    await loadEvents();
+                }
+            } catch (error) {
+                console.error('Failed to mark as published:', error);
+            }
+        }
+        
         document.getElementById('eventForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const id = document.getElementById('eventId').value;
+            
+            // Get selected tags
+            const selectedTags = Array.from(document.querySelectorAll('.tag-checkbox:checked'))
+                .map(cb => cb.value);
+            
+            // Get status
+            const status = document.querySelector('input[name="status"]:checked').value;
+            const publishedDate = status === 'published' ? document.getElementById('publishedDate').value : null;
+            
             const data = {
                 title: document.getElementById('title').value,
                 description: document.getElementById('description').value,
@@ -1317,7 +1529,10 @@
                 endDate: document.getElementById('endDate').value,
                 startTime: document.getElementById('startTime').value,
                 endTime: document.getElementById('endTime').value,
-                allDay: document.getElementById('allDay').checked
+                allDay: document.getElementById('allDay').checked,
+                tags: selectedTags.join(','),
+                status: status,
+                publishedDate: publishedDate
             };
 
             try {

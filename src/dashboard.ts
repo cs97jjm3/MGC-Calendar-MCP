@@ -10,6 +10,9 @@
  * - POST /api/events - Create event
  * - PUT /api/events/:id - Update event  
  * - DELETE /api/events/:id - Delete event
+ * - POST /api/events/:id/publish - Mark event as published
+ * - POST /api/import - Import events from ICS or JSON
+ * - GET /api/export?format=json|ics - Export all events
  * - GET / - Serve dashboard HTML
  * 
  * No authentication required - this is a local-only server.
@@ -23,8 +26,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { listEvents, createEvent, updateEvent, deleteEvent, getEvent } from './database.js';
-import { generateICS } from './ics-generator.js';
+import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents } from './database.js';
+import { generateICS, parseICS } from './ics-generator.js';
 import type { CreateEventInput } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -187,6 +190,95 @@ function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
     res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-all-events.ics"');
     res.writeHead(200);
     res.end(combinedICS);
+    return;
+  }
+
+  // POST /api/events/:id/publish - Mark event as published
+  if (req.method === 'POST' && url.pathname.match(/\/api\/events\/\d+\/publish$/)) {
+    const id = parseInt(url.pathname.split('/')[3]);
+    const event = markAsPublished(id);
+    if (event) {
+      res.writeHead(200);
+      res.end(JSON.stringify(event));
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Event not found' }));
+    }
+    return;
+  }
+
+  // POST /api/import - Import events
+  if (req.method === 'POST' && url.pathname === '/api/import') {
+    let body = '';
+    const chunks: Buffer[] = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      try {
+        const buffer = Buffer.concat(chunks);
+        const content = buffer.toString('utf-8');
+        
+        // Detect format
+        let events: any[] = [];
+        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+          // JSON format
+          const parsed = JSON.parse(content);
+          events = Array.isArray(parsed) ? parsed : [parsed];
+        } else if (content.includes('BEGIN:VCALENDAR')) {
+          // ICS format
+          events = parseICS(content);
+        } else {
+          res.writeHead(400);
+          res.end(JSON.stringify({ error: 'Unsupported format. Use JSON or ICS.' }));
+          return;
+        }
+        
+        const result = importEvents(events);
+        res.writeHead(200);
+        res.end(JSON.stringify(result));
+      } catch (error) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: `Import failed: ${error}` }));
+      }
+    });
+    return;
+  }
+
+  // GET /api/export - Export events
+  if (req.method === 'GET' && url.pathname === '/api/export') {
+    const format = url.searchParams.get('format') || 'json';
+    const events = exportEvents();
+    
+    if (format === 'json') {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-export.json"');
+      res.writeHead(200);
+      res.end(JSON.stringify(events, null, 2));
+    } else if (format === 'ics') {
+      // Generate combined ICS file
+      const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
+      let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
+      
+      events.forEach(event => {
+        const icsPath = path.join(icsDir, `${event.uid}.ics`);
+        if (fs.existsSync(icsPath)) {
+          const icsContent = fs.readFileSync(icsPath, 'utf-8');
+          const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
+          if (veventMatch) {
+            combinedICS += veventMatch[0] + '\r\n';
+          }
+        }
+      });
+      
+      combinedICS += 'END:VCALENDAR\r\n';
+      
+      res.setHeader('Content-Type', 'text/calendar');
+      res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-export.ics"');
+      res.writeHead(200);
+      res.end(combinedICS);
+    } else {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid format. Use json or ics.' }));
+    }
     return;
   }
 
