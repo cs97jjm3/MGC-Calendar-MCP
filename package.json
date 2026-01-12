@@ -1,6 +1,6 @@
 {
   "name": "mgc-calendar-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal calendar manager for Claude using ICS files - no OAuth required. Features web dashboard, content editor, and LinkedIn integration.",
   "type": "module",
   "main": "./build/index.js",
@@ -11,7 +11,10 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "start": "node build/index.js",
+    "test": "node build/index.js",
     "dashboard": "npm run build && node build/dashboard.js",
+    "pack": "npm run build && npx @anthropic-ai/mcpb pack . mgc-calendar-mcp.mcpb",
+    "validate": "npx @anthropic-ai/mcpb validate manifest.json",
     "prepare": "npm run build"
   },
   "keywords": [
@@ -20,7 +23,8 @@
     "ics",
     "icalendar",
     "claude",
-    "model-context-protocol"
+    "model-context-protocol",
+    "desktop-extension"
   ],
   "author": "James Murrell",
   "license": "MIT",
@@ -34,13 +38,13 @@
   "homepage": "https://github.com/cs97jjm3/mgc-calendar-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
-    "better-sqlite3": "^11.8.1",
     "ical-generator": "^8.0.2",
+    "sql.js": "^1.13.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.5",
+    "@types/sql.js": "^1.4.9",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

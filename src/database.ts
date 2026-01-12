@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -17,32 +17,60 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-const db = new Database(dbPath);
+let db: SqlJsDatabase;
+let SQL: any;
 
-// Initialize database schema
-db.exec(`
-  CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uid TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT DEFAULT '',
-    location TEXT DEFAULT '',
-    startDate TEXT NOT NULL,
-    endDate TEXT NOT NULL,
-    startTime TEXT DEFAULT '',
-    endTime TEXT DEFAULT '',
-    allDay INTEGER DEFAULT 0,
-    content TEXT DEFAULT '',
-    createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+// Initialize sql.js
+async function initDb() {
+  if (!SQL) {
+    SQL = await initSqlJs();
+  }
+  
+  // Load existing database or create new one
+  if (fs.existsSync(dbPath)) {
+    const buffer = fs.readFileSync(dbPath);
+    db = new SQL.Database(buffer);
+  } else {
+    db = new SQL.Database();
+  }
+  
+  // Initialize database schema
+  db.run(`
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      location TEXT DEFAULT '',
+      startDate TEXT NOT NULL,
+      endDate TEXT NOT NULL,
+      startTime TEXT DEFAULT '',
+      endTime TEXT DEFAULT '',
+      allDay INTEGER DEFAULT 0,
+      content TEXT DEFAULT '',
+      createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  
+  saveDb();
+}
 
-// Add content column if it doesn't exist (migration)
-try {
-  db.exec(`ALTER TABLE events ADD COLUMN content TEXT DEFAULT ''`);
-} catch (e) {
-  // Column already exists, ignore
+// Save database to disk
+function saveDb() {
+  if (db) {
+    const data = db.export();
+    fs.writeFileSync(dbPath, data);
+  }
+}
+
+// Ensure database is initialized
+let initPromise: Promise<void> | null = null;
+async function ensureDb() {
+  if (!initPromise) {
+    initPromise = initDb();
+  }
+  await initPromise;
 }
 
 export function generateUID(): string {
@@ -52,55 +80,82 @@ export function generateUID(): string {
 }
 
 export function createEvent(input: CreateEventInput): CalendarEvent {
+  // sql.js is synchronous but we need to ensure it's initialized
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
+  
   const uid = generateUID();
   const endDate = input.endDate || input.startDate;
   const endTime = input.endTime || input.startTime || '';
   const allDay = input.allDay ? 1 : 0;
 
-  const stmt = db.prepare(`
-    INSERT INTO events (uid, title, description, location, startDate, endDate, startTime, endTime, allDay, content)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  const result = stmt.run(
-    uid,
-    input.title,
-    input.description || '',
-    input.location || '',
-    input.startDate,
-    endDate,
-    input.startTime || '',
-    endTime,
-    allDay,
-    input.content || ''
+  db.run(
+    `INSERT INTO events (uid, title, description, location, startDate, endDate, startTime, endTime, allDay, content)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [uid, input.title, input.description || '', input.location || '', input.startDate, endDate, input.startTime || '', endTime, allDay, input.content || '']
   );
-
-  return getEvent(result.lastInsertRowid as number)!;
-}
-
-export function getEvent(id: number): CalendarEvent | null {
-  const stmt = db.prepare('SELECT * FROM events WHERE id = ?');
-  const row = stmt.get(id) as any;
   
-  if (!row) return null;
+  saveDb();
+
+  const stmt = db.prepare('SELECT * FROM events WHERE uid = ?');
+  stmt.bind([uid]);
+  stmt.step();
+  const row = stmt.getAsObject();
+  stmt.free();
 
   return {
     ...row,
     allDay: row.allDay === 1
-  };
+  } as CalendarEvent;
+}
+
+export function getEvent(id: number): CalendarEvent | null {
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
+  
+  const stmt = db.prepare('SELECT * FROM events WHERE id = ?');
+  stmt.bind([id]);
+  
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return {
+      ...row,
+      allDay: row.allDay === 1
+    } as CalendarEvent;
+  }
+  
+  stmt.free();
+  return null;
 }
 
 export function listEvents(): CalendarEvent[] {
-  const stmt = db.prepare('SELECT * FROM events ORDER BY startDate DESC, startTime DESC');
-  const rows = stmt.all() as any[];
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
   
-  return rows.map(row => ({
-    ...row,
-    allDay: row.allDay === 1
-  }));
+  const stmt = db.prepare('SELECT * FROM events ORDER BY startDate DESC, startTime DESC');
+  const results: CalendarEvent[] = [];
+  
+  while (stmt.step()) {
+    const row = stmt.getAsObject();
+    results.push({
+      ...row,
+      allDay: row.allDay === 1
+    } as CalendarEvent);
+  }
+  
+  stmt.free();
+  return results;
 }
 
 export function updateEvent(input: UpdateEventInput): CalendarEvent | null {
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
+  
   const existing = getEvent(input.id);
   if (!existing) return null;
 
@@ -147,22 +202,31 @@ export function updateEvent(input: UpdateEventInput): CalendarEvent | null {
   updates.push('updatedAt = CURRENT_TIMESTAMP');
   values.push(input.id);
 
-  const stmt = db.prepare(`UPDATE events SET ${updates.join(', ')} WHERE id = ?`);
-  stmt.run(...values);
+  db.run(`UPDATE events SET ${updates.join(', ')} WHERE id = ?`, values);
+  saveDb();
 
   return getEvent(input.id);
 }
 
 export function deleteEvent(id: number): CalendarEvent | null {
+  if (!db) {
+    throw new Error('Database not initialized. Call ensureDb() first.');
+  }
+  
   const event = getEvent(id);
   if (!event) return null;
 
-  const stmt = db.prepare('DELETE FROM events WHERE id = ?');
-  stmt.run(id);
+  db.run('DELETE FROM events WHERE id = ?', [id]);
+  saveDb();
 
   return event;
 }
 
 export function closeDatabase(): void {
-  db.close();
+  if (db) {
+    db.close();
+  }
 }
+
+// Export the initialization function
+export { ensureDb };

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MGC Calendar MCP Server v1.0
+ * MGC Calendar MCP Server v1.0.1
  * 
  * Model Context Protocol server that provides calendar management tools to Claude.
  * Uses ICS files for universal compatibility - works with any calendar app.
@@ -32,14 +32,81 @@ import {
 import { z, ZodError } from 'zod';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import * as db from './database.js';
 import { generateICS, getOutputDirectory } from './ics-generator.js';
+
+// Logging utility
+function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?: any) {
+  const timestamp = new Date().toISOString();
+  const logMessage = `[${timestamp}] [${level}] ${message}`;
+  
+  if (data) {
+    console.error(logMessage, JSON.stringify(data, null, 2));
+  } else {
+    console.error(logMessage);
+  }
+}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Verify installation on startup
+function verifyInstallation() {
+  log('INFO', 'MGC Calendar MCP Server starting...');
+  log('INFO', `Node version: ${process.version}`);
+  log('INFO', `Platform: ${process.platform}`);
+  log('INFO', `Architecture: ${process.arch}`);
+  log('INFO', `Working directory: ${process.cwd()}`);
+  log('INFO', `Server directory: ${__dirname}`);
+  
+  // Check if database directory exists
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
+  const dbDir = join(homeDir, '.mgc-calendar');
+  const icsDir = join(dbDir, 'ics-files');
+  
+  log('INFO', `Database directory: ${dbDir}`);
+  
+  if (!existsSync(dbDir)) {
+    log('INFO', 'Creating database directory...');
+    try {
+      mkdirSync(dbDir, { recursive: true });
+      log('INFO', 'Database directory created successfully');
+    } catch (error) {
+      log('ERROR', 'Failed to create database directory', error);
+    }
+  } else {
+    log('INFO', 'Database directory exists');
+  }
+  
+  if (!existsSync(icsDir)) {
+    log('INFO', 'Creating ICS files directory...');
+    try {
+      mkdirSync(icsDir, { recursive: true });
+      log('INFO', 'ICS files directory created successfully');
+    } catch (error) {
+      log('ERROR', 'Failed to create ICS files directory', error);
+    }
+  } else {
+    log('INFO', 'ICS files directory exists');
+  }
+  
+  // Check if dashboard file exists
+  const dashboardPath = join(__dirname, 'dashboard.js');
+  if (existsSync(dashboardPath)) {
+    log('INFO', `Dashboard found at: ${dashboardPath}`);
+  } else {
+    log('WARN', `Dashboard not found at: ${dashboardPath}`);
+  }
+}
+
+verifyInstallation();
 
 const server = new Server(
   {
     name: 'mgc-calendar-mcp',
-    version: '1.0.0',
+    version: '1.0.1',
   },
   {
     capabilities: {
@@ -47,9 +114,6 @@ const server = new Server(
     },
   }
 );
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Tool schemas
 const CreateEventSchema = z.object({
@@ -85,6 +149,7 @@ const DeleteEventSchema = z.object({
 
 // List tools handler
 server.setRequestHandler(ListToolsRequestSchema, async () => {
+  log('INFO', 'Tools list requested');
   return {
     tools: [
       {
@@ -169,13 +234,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Call tool handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  log('INFO', `Tool called: ${name}`, args);
 
   try {
     switch (name) {
       case 'create_event': {
         const input = CreateEventSchema.parse(args);
+        log('DEBUG', 'Creating event', input);
+        
         const event = db.createEvent(input);
+        log('INFO', `Event created with ID: ${event.id}`);
+        
         const icsPath = generateICS(event);
+        log('INFO', `ICS file generated: ${icsPath}`);
         
         return {
           content: [
@@ -189,6 +260,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'list_events': {
         const events = db.listEvents();
+        log('INFO', `Found ${events.length} events`);
         
         if (events.length === 0) {
           return {
@@ -217,9 +289,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_event': {
         const { id } = GetEventSchema.parse(args);
+        log('DEBUG', `Getting event ID: ${id}`);
+        
         const event = db.getEvent(id);
         
         if (!event) {
+          log('WARN', `Event not found: ${id}`);
           return {
             content: [
               {
@@ -230,6 +305,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
+        log('INFO', `Event retrieved: ${event.title}`);
         return {
           content: [
             {
@@ -242,9 +318,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'update_event': {
         const input = UpdateEventSchema.parse(args);
+        log('DEBUG', 'Updating event', input);
+        
         const event = db.updateEvent(input);
         
         if (!event) {
+          log('WARN', `Event not found for update: ${input.id}`);
           return {
             content: [
               {
@@ -256,6 +335,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const icsPath = generateICS(event);
+        log('INFO', `Event updated: ${event.id}, ICS: ${icsPath}`);
         
         return {
           content: [
@@ -269,9 +349,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'delete_event': {
         const { id } = DeleteEventSchema.parse(args);
+        log('DEBUG', `Deleting event ID: ${id}`);
+        
         const event = db.deleteEvent(id);
         
         if (!event) {
+          log('WARN', `Event not found for deletion: ${id}`);
           return {
             content: [
               {
@@ -283,6 +366,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         const icsPath = generateICS(event, 'CANCELLED');
+        log('INFO', `Event deleted: ${id}, Cancellation ICS: ${icsPath}`);
         
         return {
           content: [
@@ -295,19 +379,40 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'launch_dashboard': {
+        log('INFO', 'Launching dashboard...');
         try {
+          const dashboardPath = join(__dirname, 'dashboard.js');
+          
+          if (!existsSync(dashboardPath)) {
+            log('ERROR', `Dashboard file not found: ${dashboardPath}`);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Dashboard launch failed: dashboard.js not found at ${dashboardPath}\n\nPlease ensure the project is built correctly:\nnpm run build`,
+                },
+              ],
+            };
+          }
+          
+          log('DEBUG', `Spawning dashboard process: node ${dashboardPath}`);
+          
           // Spawn the dashboard server
-          const dashboardProcess = spawn('node', [__dirname + '/dashboard.js'], {
+          const dashboardProcess = spawn('node', [dashboardPath], {
             detached: true,
             stdio: 'ignore'
           });
           dashboardProcess.unref();
+
+          log('INFO', 'Dashboard process spawned');
 
           // Open browser after a short delay
           setTimeout(() => {
             const url = 'http://localhost:3737';
             const start = process.platform === 'darwin' ? 'open' :
                          process.platform === 'win32' ? 'start' : 'xdg-open';
+            
+            log('DEBUG', `Opening browser: ${start} ${url}`);
             spawn(start, [url], { shell: true });
           }, 1000);
 
@@ -320,11 +425,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             ],
           };
         } catch (error) {
+          log('ERROR', 'Dashboard launch failed', error);
           return {
             content: [
               {
                 type: 'text',
-                text: `Failed to launch dashboard: ${error}\n\nYou can manually start it with: npm run dashboard`,
+                text: `Failed to launch dashboard: ${error}\n\nYou can manually start it with: npm run dashboard\n\nError details logged to stderr.`,
               },
             ],
           };
@@ -332,25 +438,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       default:
+        log('ERROR', `Unknown tool called: ${name}`);
         throw new Error(`Unknown tool: ${name}`);
     }
   } catch (error) {
     if (error instanceof ZodError) {
       const errorMessages = error.issues.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+      log('ERROR', 'Validation error', { issues: error.issues });
       throw new Error(`Invalid arguments: ${errorMessages}`);
     }
+    log('ERROR', 'Tool execution error', error);
     throw error;
   }
 });
 
 // Start server
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error('MGC Calendar MCP server running on stdio');
+  try {
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    log('INFO', 'MGC Calendar MCP server running on stdio');
+    log('INFO', 'Server ready to receive tool calls');
+  } catch (error) {
+    log('ERROR', 'Failed to start server', error);
+    throw error;
+  }
 }
 
 main().catch((error) => {
+  log('ERROR', 'Fatal error in main()', error);
   console.error('Fatal error:', error);
   process.exit(1);
 });

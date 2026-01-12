@@ -2,17 +2,17 @@
   "manifest_version": "0.2",
   "name": "mgc-calendar",
   "display_name": "MGC Calendar Manager",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Universal calendar manager for Claude using ICS files - no OAuth required",
-  "long_description": "MGC Calendar Manager lets Claude create, update, and delete calendar events using standard ICS files. Works with any calendar application (Google Calendar, Outlook, Apple Calendar) without requiring API keys or OAuth setup. All events are tracked locally with full CRUD operations.",
+  "long_description": "MGC Calendar Manager lets Claude create, update, and delete calendar events using standard ICS files. Works with any calendar application (Google Calendar, Outlook, Apple Calendar) without requiring API keys or OAuth setup. All events are tracked locally with full CRUD operations. Includes web dashboard with visual calendar views and LinkedIn integration.",
   "author": {
     "name": "James Murrell (MGC)"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/mgc-calendar-mcp"
+    "url": "https://github.com/cs97jjm3/mgc-calendar-mcp"
   },
-  "keywords": ["calendar", "ics", "icalendar", "productivity", "scheduling", "no-oauth"],
+  "keywords": ["calendar", "ics", "icalendar", "productivity", "scheduling", "no-oauth", "dashboard"],
   "license": "MIT",
   "server": {
     "type": "node",
@@ -22,28 +22,6 @@
       "args": ["${__dirname}/build/index.js"]
     }
   },
-  "tools": [
-    {
-      "name": "create_event",
-      "description": "Create a new calendar event and generate ICS file"
-    },
-    {
-      "name": "list_events",
-      "description": "List all tracked calendar events"
-    },
-    {
-      "name": "get_event",
-      "description": "Get details of a specific event by ID"
-    },
-    {
-      "name": "update_event",
-      "description": "Update an existing event and generate new ICS file"
-    },
-    {
-      "name": "delete_event",
-      "description": "Delete an event and generate cancellation ICS file"
-    }
-  ],
   "tools_generated": false,
   "compatibility": {
     "claude_desktop": ">=1.0.0",
