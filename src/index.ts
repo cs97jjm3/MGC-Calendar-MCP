@@ -1,5 +1,28 @@
 #!/usr/bin/env node
 
+/**
+ * MGC Calendar MCP Server v1.0
+ * 
+ * Model Context Protocol server that provides calendar management tools to Claude.
+ * Uses ICS files for universal compatibility - works with any calendar app.
+ * No OAuth, no API keys, no authentication required.
+ * 
+ * Tools provided:
+ * - create_event: Create new calendar events
+ * - list_events: List all tracked events
+ * - get_event: Get details of specific event
+ * - update_event: Update existing events
+ * - delete_event: Delete events (generates cancellation ICS)
+ * - launch_dashboard: Open web dashboard on port 3737
+ * 
+ * Data storage:
+ * - SQLite database: ~/.mgc-calendar/events.db
+ * - ICS files: ~/.mgc-calendar/ics-files/
+ * 
+ * Author: James Murrell (MGC)
+ * License: MIT
+ */
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {

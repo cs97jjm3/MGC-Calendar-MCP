@@ -87,9 +87,28 @@ Add this configuration (replace with your actual path):
 
 ## Usage
 
-### Create Events
+### Quick Start with Dashboard
 
-Ask Claude to create calendar events:
+The easiest way to use MGC Calendar is through the web dashboard:
+
+1. **Launch dashboard from Claude Desktop:**
+   ```
+   "Launch the dashboard"
+   ```
+
+2. **Click any event** in the calendar to edit it
+
+3. **Add your LinkedIn post** to the Description field (this is your formatted article)
+
+4. **Click "📤 Post to LinkedIn"** - it copies the description and opens LinkedIn
+
+5. **Paste (Ctrl+V or Cmd+V)** in LinkedIn and publish
+
+**That's it!** No manual ICS imports needed when using the dashboard.
+
+### Create Events via Claude
+
+You can also create events by talking to Claude:
 
 ```
 "Create a calendar event for Article 2 writing session on January 22, 2026 at 2pm"
@@ -124,20 +143,26 @@ Claude will:
 "Launch the dashboard"
 ```
 
-Then:
-- Click events to edit them
-- Click empty days to create new events
-- Click "Add Content" to write articles
-- Click "Post to LinkedIn" to share content
+**Then:**
 
-### Add Article Content
+**Post to LinkedIn:**
+1. Click any event in calendar view
+2. Paste your formatted article in the Description field
+3. Click "📤 Post to LinkedIn" button
+4. Paste in LinkedIn and publish
 
-1. Open the dashboard
-2. Click an event in any view
-3. Click "Add Content" button
-4. Write your article (100-3000 characters)
-5. Save content
-6. Click "Post to LinkedIn" to copy and share
+**Create new events:**
+- Click empty day in Month view to create event on that date
+- Or click "+ Create Event" button
+
+**Edit events:**
+- Click any event in Month/Week/List view to edit
+- Update title, description, dates, times
+- Save changes
+
+**The Description field is your LinkedIn post** - keep it 100-3000 characters and formatted exactly how you want it to appear on LinkedIn.
+
+**The Content field is optional** - use it for article drafts, notes, or additional content you don't want to post.
 
 ## File Locations
 

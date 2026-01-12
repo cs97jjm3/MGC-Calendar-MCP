@@ -1,3 +1,23 @@
+/**
+ * MGC Calendar Dashboard Server
+ * 
+ * Simple HTTP server that serves the dashboard HTML and provides REST API for event management.
+ * Runs on port 3737 and provides full CRUD operations for calendar events.
+ * 
+ * API Endpoints:
+ * - GET /api/events - List all events
+ * - GET /api/events/:id - Get single event
+ * - POST /api/events - Create event
+ * - PUT /api/events/:id - Update event  
+ * - DELETE /api/events/:id - Delete event
+ * - GET / - Serve dashboard HTML
+ * 
+ * No authentication required - this is a local-only server.
+ * 
+ * Author: James Murrell (MGC)
+ * License: MIT
+ */
+
 import http from 'http';
 import fs from 'fs';
 import path from 'path';

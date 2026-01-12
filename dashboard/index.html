@@ -1,4 +1,33 @@
 <!DOCTYPE html>
+<!--
+  MGC Calendar Dashboard v1.0
+  
+  A simple, single-file web dashboard for managing calendar events.
+  No frameworks, no build process - just HTML, CSS, and vanilla JavaScript.
+  
+  Key Features:
+  - Month/Week/List calendar views
+  - Click events to edit them
+  - Click empty days to create new events
+  - Description field = LinkedIn post (100-3000 chars)
+  - Content field = Optional article draft/notes
+  - "Post to LinkedIn" button copies description and opens LinkedIn
+  - Events with descriptions 100+ chars show as GREEN
+  
+  Data Flow:
+  1. JavaScript fetches events from /api/events (served by dashboard.ts)
+  2. Events are rendered in the selected view (month/week/list)
+  3. Clicking events opens edit modal with "Post to LinkedIn" button
+  4. Saving updates the database via PUT /api/events/:id
+  
+  Customization:
+  - Colors: Search for #2563eb (blue) and #16a34a (green) to change theme
+  - Add more views: Copy renderMonthView() pattern
+  - Change content threshold: Search for "100" (minimum chars for LinkedIn)
+  
+  Author: James Murrell (MGC)
+  License: MIT
+-->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -688,6 +717,7 @@
                 </div>
 
                 <div class="modal-actions">
+                    <button type="button" class="btn btn-success" onclick="postEventToLinkedIn()" id="postEventLinkedInBtn">📤 Post to LinkedIn</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn">Save Event</button>
                 </div>
@@ -724,11 +754,17 @@
     </div>
 
     <script>
-        let events = [];
-        let currentView = 'month';
+        // ============================================
+        // GLOBAL STATE
+        // ============================================
+        let events = []; // All calendar events from database
+        let currentView = 'month'; // Current view: 'month', 'week', or 'list'
         let currentDate = new Date(); // Always start at actual current month
-        let currentEditingEvent = null;
+        let currentEditingEvent = null; // Track which event is being edited in content modal
 
+        // ============================================
+        // INITIALIZATION
+        // ============================================
         // Load events on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadEvents();
@@ -737,12 +773,20 @@
             document.getElementById('content').addEventListener('input', updateCharCount);
         });
 
+        // ============================================
+        // DATA LOADING
+        // ============================================
+        /**
+         * Load all events from the API and render the current view.
+         * Events are sorted by date (soonest first).
+         */
         async function loadEvents() {
             try {
                 const response = await fetch('/api/events');
                 events = await response.json();
                 
                 // Sort events by date and time (soonest first)
+                // This ensures events appear in chronological order everywhere
                 events.sort((a, b) => {
                     const dateA = new Date(a.startDate + 'T' + (a.startTime || '00:00'));
                     const dateB = new Date(b.startDate + 'T' + (b.startTime || '00:00'));
@@ -769,6 +813,13 @@
             postBtn.disabled = count < 100 || count > 3000;
         }
 
+        // ============================================
+        // VIEW MANAGEMENT
+        // ============================================
+        /**
+         * Switch between Month, Week, and List views.
+         * Updates button states and shows/hides the appropriate view container.
+         */
         function switchView(view) {
             currentView = view;
             
@@ -864,7 +915,8 @@
             if (dayEvents.length > 0) {
                 eventsHtml = '<div class="day-events">';
                 dayEvents.slice(0, 3).forEach(event => {
-                    const hasContent = event.content && event.content.trim().length > 0;
+                    // Event shows as GREEN if description is 100+ chars (LinkedIn-ready)
+                    const hasContent = (event.description || '').trim().length >= 100;
                     const eventClass = hasContent ? 'day-event has-content' : 'day-event';
                     eventsHtml += `<div class="${eventClass}" onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</div>`;
                 });
@@ -925,7 +977,7 @@
                     
                     let eventsHtml = '';
                     dayEvents.forEach(event => {
-                        const hasContent = event.content && event.content.trim().length > 0;
+                        const hasContent = (event.description || '').trim().length >= 100;
                         const eventClass = hasContent ? 'week-event has-content' : 'week-event';
                         eventsHtml += `<div class="${eventClass}" onclick="event.stopPropagation(); editEvent(${event.id})">${escapeHtml(event.title)}</div>`;
                     });
@@ -953,7 +1005,7 @@
             }
 
             container.innerHTML = events.map(event => {
-                const hasContent = event.content && event.content.trim().length > 0;
+                const hasContent = (event.description || '').trim().length >= 100;
                 return `
                 <div class="event-item">
                     <div class="event-details">
@@ -982,6 +1034,14 @@
             `}).join('');
         }
 
+        // ============================================
+        // STATISTICS
+        // ============================================
+        /**
+         * Update the statistics cards at the top of the dashboard.
+         * "With Content" checks if description field has 100+ characters.
+         * This indicates the event has a LinkedIn-ready post.
+         */
         function updateStats() {
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -998,7 +1058,11 @@
             }).length;
             document.getElementById('thisMonth').textContent = thisMonth;
 
-            const withContent = events.filter(e => e.content && e.content.trim().length > 0).length;
+            // Check description field for LinkedIn content (100+ chars)
+            const withContent = events.filter(e => {
+                const desc = (e.description || '').trim();
+                return desc.length >= 100;
+            }).length;
             document.getElementById('withContent').textContent = withContent;
         }
 
@@ -1071,12 +1135,53 @@
             document.getElementById('contentModalTitle').textContent = `Edit Content: ${event.title}`;
             document.getElementById('contentEventId').value = event.id;
             document.getElementById('content').value = event.content || '';
+            
+            // Check if description is suitable for LinkedIn
+            const descLength = (event.description || '').trim().length;
+            const postBtn = document.getElementById('postLinkedInBtn');
+            postBtn.disabled = descLength < 100 || descLength > 3000;
+            
             updateCharCount();
             document.getElementById('contentModal').classList.add('active');
         }
 
         function closeModal() {
             document.getElementById('eventModal').classList.remove('active');
+        }
+
+        // ============================================
+        // LINKEDIN POSTING
+        // ============================================
+        /**
+         * Post event to LinkedIn from the event edit modal.
+         * Copies the DESCRIPTION field (not content) to clipboard and opens LinkedIn.
+         * Description should be 100-3000 chars and formatted for LinkedIn.
+         */
+        async function postEventToLinkedIn() {
+            const description = document.getElementById('description').value.trim();
+            
+            if (!description || description.length < 100) {
+                alert('Please add a description (min 100 characters) to post to LinkedIn.\n\nThe description field should contain your formatted LinkedIn post.');
+                return;
+            }
+
+            if (description.length > 3000) {
+                alert('Description is too long for LinkedIn (max 3000 characters)');
+                return;
+            }
+
+            // Copy description to clipboard
+            try {
+                await navigator.clipboard.writeText(description);
+                
+                // Open LinkedIn post creation page
+                window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
+                
+                alert('✅ LinkedIn post copied to clipboard!\n\nLinkedIn is opening in a new tab.\nJust paste (Ctrl+V or Cmd+V) and publish!');
+            } catch (error) {
+                console.error('Failed to copy description:', error);
+                alert('Failed to copy to clipboard. Please copy the description field manually.');
+            }
         }
 
         function closeContentModal() {
@@ -1102,28 +1207,33 @@
         }
 
         async function postToLinkedIn() {
-            if (!currentEditingEvent || !currentEditingEvent.content) {
-                alert('No content to post');
+            if (!currentEditingEvent) {
+                alert('No event selected');
                 return;
             }
 
-            const content = currentEditingEvent.content.trim();
-            if (content.length < 100 || content.length > 3000) {
-                alert('Content must be between 100 and 3000 characters for LinkedIn');
+            const description = currentEditingEvent.description?.trim();
+            if (!description || description.length < 100) {
+                alert('Event description must be at least 100 characters for LinkedIn posting. Add a formatted LinkedIn post to the description field.');
                 return;
             }
 
-            // Copy content to clipboard
+            if (description.length > 3000) {
+                alert('Description is too long for LinkedIn (max 3000 characters)');
+                return;
+            }
+
+            // Copy description to clipboard
             try {
-                await navigator.clipboard.writeText(content);
+                await navigator.clipboard.writeText(description);
                 
                 // Open LinkedIn post creation page
                 window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
                 
-                alert('Content copied to clipboard! Paste it into LinkedIn and post.');
+                alert('LinkedIn post copied to clipboard! Paste it into LinkedIn and publish.');
             } catch (error) {
-                console.error('Failed to copy content:', error);
-                alert('Failed to copy content to clipboard. Please copy it manually.');
+                console.error('Failed to copy description:', error);
+                alert('Failed to copy to clipboard. Please copy the description manually.');
             }
         }
 
