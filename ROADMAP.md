@@ -3,7 +3,7 @@
 This roadmap outlines the planned features and improvements for MGC Calendar MCP. Dates are estimates and subject to change based on user feedback and priorities.
 
 ## Current Version: 1.0.0
-Released: January 11, 2026
+Released: January 2026
 
 Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 
@@ -20,7 +20,6 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 - ⏳ Event categories/tags
 - [ ] Articles scheduled vs published
 
-### Technical Improvements
 ### Documentation
 - [ ] API documentation for dashboard endpoints
 - [ ] Architecture documentation
@@ -45,6 +44,8 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 ## Version 2.0 - Automation and Sync
 **Target: Q2 2026**
 
+### Calendar Sync
+Optional synchronization with external calendars for users who want it.
 
 **Implementation options being evaluated:**
 - CalDAV integration (standard protocol)
@@ -63,11 +64,10 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 
 ---
 
-## Version 2.1 - Analytics and Intelligence
+## Version 2.1 - Smart Scheduling
 **Target: Q3 2026**
 
-
-### Smart Scheduling
+### Posting Intelligence
 - [ ] Suggest optimal posting times based on past data
 - [ ] Detect schedule conflicts
 - [ ] Recommend gaps for new articles
@@ -141,7 +141,7 @@ Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
 
 | Version | Release Date | Key Features |
 |---------|--------------|--------------|
-| 1.0.0   | Jan 11, 2026 | Initial release, web dashboard, LinkedIn integration |
+| 1.0.0   | Jan 2026 | Initial release, web dashboard, LinkedIn integration |
 | 1.1.0   | Feb 2026 (planned) | Bulk operations, search, filtering |
 | 1.2.0   | Mar 2026 (planned) | Dark mode, templates, UX improvements |
 | 2.0.0   | Q2 2026 (planned) | Auto-sync, recurring events, versioning |
