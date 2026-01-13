@@ -42,6 +42,65 @@ function serveHTML(res: http.ServerResponse) {
   res.end(html);
 }
 
+function serveStaticFile(filepath: string, res: http.ServerResponse) {
+  const dashboardDir = path.join(__dirname, '..', 'dashboard');
+  const fullPath = path.normalize(path.join(dashboardDir, filepath));
+  const normalizedDashboardDir = path.normalize(dashboardDir);
+  
+  console.log(`Static file request:`);
+  console.log(`  filepath: ${filepath}`);
+  console.log(`  dashboardDir: ${normalizedDashboardDir}`);
+  console.log(`  fullPath: ${fullPath}`);
+  console.log(`  exists: ${fs.existsSync(fullPath)}`);
+  
+  // Security: prevent directory traversal
+  if (!fullPath.startsWith(normalizedDashboardDir)) {
+    console.log(`  BLOCKED: Path traversal attempt`);
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
+  
+  // Check if file exists
+  if (!fs.existsSync(fullPath)) {
+    console.log(`  ERROR: File not found`);
+    res.writeHead(404);
+    res.end(`Not found: ${filepath}`);
+    return;
+  }
+  
+  // Determine content type
+  const ext = path.extname(fullPath).toLowerCase();
+  const contentTypes: { [key: string]: string } = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.webp': 'image/webp'
+  };
+  
+  const contentType = contentTypes[ext] || 'application/octet-stream';
+  console.log(`  contentType: ${contentType}`);
+  
+  try {
+    // Read and serve file
+    const content = fs.readFileSync(fullPath);
+    console.log(`  SUCCESS: Serving ${content.length} bytes`);
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
+  } catch (error) {
+    console.log(`  ERROR: ${error}`);
+    res.writeHead(500);
+    res.end(`Error reading file: ${error}`);
+  }
+}
+
 function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
   const url = new URL(req.url || '', `http://localhost:${PORT}`);
   
@@ -289,10 +348,16 @@ function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '', `http://localhost:${PORT}`);
   
+  console.log(`Request: ${req.method} ${url.pathname}`);
+  
   if (url.pathname.startsWith('/api/')) {
     handleAPI(req, res);
-  } else {
+  } else if (url.pathname === '/') {
     serveHTML(res);
+  } else {
+    // Serve static files (images, css, js, etc.)
+    console.log(`Attempting to serve static file: ${url.pathname}`);
+    serveStaticFile(url.pathname, res);
   }
 });
 
