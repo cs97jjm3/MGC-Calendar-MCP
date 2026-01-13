@@ -14,6 +14,7 @@
   },
   "keywords": ["calendar", "ics", "icalendar", "productivity", "scheduling", "no-oauth", "dashboard"],
   "license": "MIT",
+  "icon": "dashboard/logo.png",
   "server": {
     "type": "node",
     "entry_point": "build/index.js",
