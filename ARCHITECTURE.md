@@ -102,6 +102,9 @@ CREATE TABLE events (
   endTime TEXT DEFAULT '',            -- HH:MM format (24-hour)
   allDay INTEGER DEFAULT 0,           -- Boolean: 0 = false, 1 = true
   content TEXT DEFAULT '',            -- Article content for LinkedIn
+  tags TEXT DEFAULT '',               -- v1.1: Comma-separated tags
+  status TEXT DEFAULT 'scheduled',    -- v1.1: 'scheduled' or 'published'
+  publishedDate TEXT DEFAULT NULL,    -- v1.1: ISO date when published
   createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
   updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
 )
@@ -314,12 +317,14 @@ When Claude calls a tool:
 
 ## Testing Strategy
 
-### Current State
+### Current State (v1.1.0)
 - Manual testing via Claude Desktop
 - Manual dashboard testing in browser
 - Manual ICS import testing in calendar apps
+- Manual testing of import/export functionality
+- Manual testing of tags and status tracking
 
-### Planned (v1.1)
+### Planned (v1.2)
 - Unit tests for database operations
 - Integration tests for ICS generation
 - API endpoint tests for dashboard

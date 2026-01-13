@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MGC Calendar MCP Server v1.0.1
+ * MGC Calendar MCP Server v1.1.0
  * 
  * Model Context Protocol server that provides calendar management tools to Claude.
  * Uses ICS files for universal compatibility - works with any calendar app.

@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <!--
-  MGC Calendar Dashboard v1.0
+  MGC Calendar Dashboard v1.1.0
   
   A simple, single-file web dashboard for managing calendar events.
   No frameworks, no build process - just HTML, CSS, and vanilla JavaScript.
   
   Key Features:
   - Month/Week/List calendar views
+  - Import/Export events (ICS and JSON formats)
+  - Event tags/categories for organization
+  - Scheduled vs Published status tracking
   - Click events to edit them
   - Click empty days to create new events
   - Description field = LinkedIn post (100-3000 chars)
   - Content field = Optional article draft/notes
   - "Post to LinkedIn" button copies description and opens LinkedIn
   - Events with descriptions 100+ chars show as GREEN
+  - Color-coded status indicators (blue=scheduled, green=published)
   
   Data Flow:
   1. JavaScript fetches events from /api/events (served by dashboard.ts)
@@ -668,8 +672,8 @@
 </head>
 <body>
     <div class="container">
-       <header><h1><img src="https://github.com/cs97jjm3/UK-Care-Sector-Regulatory-Intelligence-MCP/blob/main/icon.png?raw=true" alt="MGC Logo" width=200 height=200>
-    MGC Calendar Dashboard</h1>
+       <header><img src="https://github.com/cs97jjm3/MGC-Calendar-MCP/blob/main/dashboard/logo.png?raw=true" alt="MGC Logo" width=200 height=200>
+   <h1> CLaude Desktop Calendar Dashboard</h1>
 
     <p class="subtitle">
         Plan work, hold content, publish without OAuth

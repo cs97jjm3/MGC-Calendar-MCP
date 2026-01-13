@@ -1,3 +1,17 @@
+/**
+ * MGC Calendar MCP - ICS File Generator
+ * 
+ * Generates standard ICS (iCalendar) files for calendar events.
+ * 
+ * v1.1.0 adds:
+ * - parseICS: Import events from ICS files
+ * 
+ * Output directory: ~/.mgc-calendar/ics-files/
+ * 
+ * Author: James Murrell (MGC)
+ * License: MIT
+ */
+
 import ical, { ICalEventData } from 'ical-generator';
 import fs from 'fs';
 import path from 'path';

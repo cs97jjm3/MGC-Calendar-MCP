@@ -2,9 +2,9 @@
   "manifest_version": "0.2",
   "name": "mgc-calendar",
   "display_name": "MGC Calendar Manager",
-  "version": "1.0.2",
-  "description": "Universal calendar manager for Claude using ICS files - no OAuth required",
-  "long_description": "MGC Calendar Manager lets Claude create, update, and delete calendar events using standard ICS files. Works with any calendar application (Google Calendar, Outlook, Apple Calendar) without requiring API keys or OAuth setup. All events are tracked locally with full CRUD operations. Includes web dashboard with visual calendar views and LinkedIn integration.",
+  "version": "1.1.0",
+  "description": "Universal calendar manager with import/export, tags, and status tracking - no OAuth required",
+  "long_description": "MGC Calendar Manager lets Claude create, update, and delete calendar events using standard ICS files. Works with any calendar application (Google Calendar, Outlook, Apple Calendar) without requiring API keys or OAuth setup. Features include bulk import/export (ICS/JSON), event tagging, scheduled vs published status tracking, web dashboard with visual calendar views, and LinkedIn integration. All events are tracked locally with full CRUD operations.",
   "author": {
     "name": "James Murrell (MGC)"
   },

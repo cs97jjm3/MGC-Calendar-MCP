@@ -1,3 +1,20 @@
+/**
+ * MGC Calendar MCP - Database Operations
+ * 
+ * SQLite database management for calendar events.
+ * Uses sql.js for universal Node.js compatibility.
+ * 
+ * v1.1.0 features:
+ * - Auto-migration adds tags, status, publishedDate columns
+ * - Import/export functions for bulk operations
+ * - Mark as published helper function
+ * 
+ * Database location: ~/.mgc-calendar/events.db
+ * 
+ * Author: James Murrell (MGC)
+ * License: MIT
+ */
+
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
