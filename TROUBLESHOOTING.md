@@ -71,13 +71,16 @@ npm run build
    - Search for "mgc-calendar" or "MGC Calendar"
    - Look for error messages
 
-3. **With improved logging (v1.0.1), you'll see:**
+3. **With improved logging (v1.1.0+), you'll see:**
    ```
    [2026-01-12T10:30:00.000Z] [INFO] MGC Calendar MCP Server starting...
    [2026-01-12T10:30:00.001Z] [INFO] Node version: v20.x.x
    [2026-01-12T10:30:00.002Z] [INFO] Platform: win32
    [2026-01-12T10:30:00.003Z] [INFO] Database directory: C:\Users\...\\.mgc-calendar
-   [2026-01-12T10:30:00.004Z] [INFO] Server ready to receive tool calls
+   [2026-01-12T10:30:00.004Z] [INFO] Database initialized
+   [2026-01-12T10:30:00.005Z] [INFO] Auto-starting dashboard...
+   [2026-01-12T10:30:00.006Z] [INFO] Dashboard process spawned
+   [2026-01-12T10:30:00.007Z] [INFO] Server ready to receive tool calls
    ```
 
 4. **If you see errors about missing directories:**
@@ -90,27 +93,85 @@ npm run build
 
 **Symptoms:**
 - Event doesn't create
-- Error about database
+- Error about database not initialized
+
+**Note:** As of v1.1.0+, the database is automatically initialized before any operations. If you see database errors, check the logs for initialization failures.
 
 **Debug steps:**
 1. Check database directory exists: `C:\Users\YourName\.mgc-calendar`
 2. Check database file exists: `events.db`
 3. Check you have write permissions to that directory
-4. Look in logs for "Creating event" message
+4. Look in logs for "Database initialized" message on startup
+5. Look in logs for "Creating event" message when tool is called
 
 **Manual fix:**
 ```bash
 # Delete and recreate database
 del C:\Users\YourName\.mgc-calendar\events.db
-# Server will recreate on next event creation
+# Server will recreate on next startup (database auto-initializes)
 ```
 
-### launch_dashboard fails
+### Dashboard doesn't auto-start
+
+**Note:** As of v1.1.0+, the dashboard automatically starts when Claude Desktop launches.
 
 **Symptoms:**
-- Dashboard doesn't open
+- Dashboard doesn't open automatically
+- Browser doesn't launch
+- Port 3737 connection refused
+- "localhost refused to connect" error
+
+**Debug steps:**
+
+1. **Check if dashboard is already running:**
+   ```bash
+   netstat -ano | findstr :3737
+   ```
+   If it's running, just open http://localhost:3737 in your browser.
+
+2. **Check logs for dashboard startup errors:**
+   Look for these messages:
+   - `[INFO] Auto-starting dashboard...`
+   - `[INFO] Dashboard process spawned`
+   - `[ERROR] Dashboard stderr` - indicates startup failure
+   - `[ERROR] Dashboard process exited with code` - process crashed
+
+3. **Check if dashboard.js exists:**
+   ```bash
+   dir C:\Users\murre\Documents\GitHub\mgc-calendar-mcp\build\dashboard.js
+   ```
+
+4. **Check if port 3737 is already in use:**
+   ```bash
+   netstat -ano | findstr :3737
+   ```
+   
+   If something is using it:
+   ```bash
+   # Kill the process (replace PID with actual process ID)
+   taskkill /PID <PID> /F
+   ```
+
+5. **Manually start dashboard:**
+   ```bash
+   cd C:\Users\murre\Documents\GitHub\mgc-calendar-mcp
+   npm run dashboard
+   ```
+   
+   Then open: http://localhost:3737
+
+6. **Check firewall isn't blocking:**
+   - Windows may ask for firewall permission
+   - Allow Node.js through firewall
+
+### launch_dashboard tool fails
+
+**Symptoms:**
+- Dashboard doesn't open when using launch_dashboard tool
 - Browser doesn't launch
 - Port 3737 error
+
+**Note:** The dashboard now auto-starts, so this tool is mainly for restarting the dashboard if needed.
 
 **Debug steps:**
 
@@ -294,7 +355,7 @@ If none of this helps:
 ## Version Info
 
 This troubleshooting guide is for:
-- MGC Calendar MCP v1.0.1+
+- MGC Calendar MCP v1.1.1+
 - Claude Desktop 1.0.0+
 - Node.js 16.0.0+
 

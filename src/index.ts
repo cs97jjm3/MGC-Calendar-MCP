@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * MGC Calendar MCP Server v1.1.0
+ * MGC Calendar MCP Server v1.1.1
  * 
  * Model Context Protocol server that provides calendar management tools to Claude.
  * Uses ICS files for universal compatibility - works with any calendar app.
@@ -32,7 +32,7 @@ import {
 import { z, ZodError } from 'zod';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve as resolvePath } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import * as db from './database.js';
 import { generateICS, getOutputDirectory } from './ics-generator.js';
@@ -106,7 +106,7 @@ verifyInstallation();
 const server = new Server(
   {
     name: 'mgc-calendar-mcp',
-    version: '1.0.1',
+    version: '1.1.1',
   },
   {
     capabilities: {
@@ -237,6 +237,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   log('INFO', `Tool called: ${name}`, args);
 
   try {
+    // Ensure database is initialized before any database operations
+    await db.ensureDb();
+    
     switch (name) {
       case 'create_event': {
         const input = CreateEventSchema.parse(args);
@@ -455,6 +458,69 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 // Start server
 async function main() {
   try {
+    // Initialize database first
+    await db.ensureDb();
+    log('INFO', 'Database initialized');
+    
+    // Auto-start dashboard
+    try {
+      const dashboardPath = join(__dirname, 'dashboard.js');
+      const absoluteDashboardPath = resolvePath(dashboardPath);
+      
+      if (existsSync(absoluteDashboardPath)) {
+        log('INFO', 'Auto-starting dashboard...');
+        log('DEBUG', `Dashboard path: ${absoluteDashboardPath}`);
+        log('DEBUG', `Working directory: ${__dirname}`);
+        
+        // Spawn dashboard with proper working directory and error handling
+        const dashboardProcess = spawn('node', [absoluteDashboardPath], {
+          cwd: __dirname,
+          detached: true,
+          stdio: ['ignore', 'ignore', 'pipe'] // Capture stderr for errors
+        });
+        
+        // Log any errors from the dashboard process
+        dashboardProcess.stderr?.on('data', (data) => {
+          log('ERROR', 'Dashboard stderr', data.toString());
+        });
+        
+        dashboardProcess.on('error', (error) => {
+          log('ERROR', 'Failed to spawn dashboard process', error);
+        });
+        
+        // Check if process exits early (indicates startup failure)
+        dashboardProcess.on('exit', (code, signal) => {
+          if (code !== null && code !== 0) {
+            log('ERROR', `Dashboard process exited with code ${code}`);
+          } else if (signal) {
+            log('WARN', `Dashboard process exited with signal ${signal}`);
+          }
+        });
+        
+        // Give process a moment to start, then unref
+        setTimeout(() => {
+          dashboardProcess.unref();
+          log('INFO', 'Dashboard process detached');
+        }, 500);
+        
+        log('INFO', 'Dashboard process spawned');
+        
+        // Wait longer and verify server is ready before opening browser
+        setTimeout(() => {
+          const url = 'http://localhost:3737';
+          const start = process.platform === 'darwin' ? 'open' :
+                       process.platform === 'win32' ? 'start' : 'xdg-open';
+          log('DEBUG', `Opening browser: ${start} ${url}`);
+          spawn(start, [url], { shell: true });
+        }, 3000); // Increased delay to 3 seconds
+      } else {
+        log('WARN', `Dashboard not found at: ${dashboardPath}, skipping auto-start`);
+      }
+    } catch (error) {
+      log('WARN', 'Failed to auto-start dashboard', error);
+      // Don't fail the MCP server if dashboard fails to start
+    }
+    
     const transport = new StdioServerTransport();
     await server.connect(transport);
     log('INFO', 'MGC Calendar MCP server running on stdio');

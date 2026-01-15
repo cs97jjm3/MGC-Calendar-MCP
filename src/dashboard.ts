@@ -26,7 +26,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents } from './database.js';
+import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents, ensureDb } from './database.js';
 import { generateICS, parseICS } from './ics-generator.js';
 import type { CreateEventInput } from './types.js';
 
@@ -101,7 +101,10 @@ function serveStaticFile(filepath: string, res: http.ServerResponse) {
   }
 }
 
-function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
+async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
+  // Ensure database is initialized
+  await ensureDb();
+  
   const url = new URL(req.url || '', `http://localhost:${PORT}`);
   
   res.setHeader('Content-Type', 'application/json');
@@ -345,13 +348,13 @@ function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
   res.end(JSON.stringify({ error: 'Not found' }));
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '', `http://localhost:${PORT}`);
   
   console.log(`Request: ${req.method} ${url.pathname}`);
   
   if (url.pathname.startsWith('/api/')) {
-    handleAPI(req, res);
+    await handleAPI(req, res);
   } else if (url.pathname === '/') {
     serveHTML(res);
   } else {
@@ -361,7 +364,20 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`MGC Calendar Dashboard running at http://localhost:${PORT}`);
-  console.log('Press Ctrl+C to stop');
-});
+// Initialize database before starting server
+async function startServer() {
+  try {
+    await ensureDb();
+    console.log('Database initialized');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+  
+  server.listen(PORT, () => {
+    console.log(`MGC Calendar Dashboard running at http://localhost:${PORT}`);
+    console.log('Press Ctrl+C to stop');
+  });
+}
+
+startServer();

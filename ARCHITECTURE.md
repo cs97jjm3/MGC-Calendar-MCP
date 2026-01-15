@@ -245,13 +245,16 @@ CREATE TABLE events (
 
 ## MCP Integration
 
-### Tool Registration
+### Server Startup Sequence
 
 When Claude Desktop starts the MCP server:
 
 1. Server starts via stdio transport
-2. Claude sends `tools/list` request
-3. Server responds with 6 tool definitions:
+2. **Database initialization:** `ensureDb()` is called to initialize SQLite database
+3. **Dashboard auto-start:** Dashboard process is spawned automatically (as of v1.1.1+)
+4. Browser opens http://localhost:3737 after 3 seconds (if dashboard starts successfully)
+5. Claude sends `tools/list` request
+6. Server responds with 6 tool definitions:
    - create_event
    - list_events
    - get_event
@@ -259,22 +262,29 @@ When Claude Desktop starts the MCP server:
    - delete_event
    - launch_dashboard
 
+### Tool Registration
+
 ### Tool Invocation
 
 When Claude calls a tool:
 
 1. Claude sends `tools/call` request with tool name and arguments
-2. Server validates arguments with Zod schemas
-3. Server executes tool logic
-4. Server returns response with content blocks
-5. Claude incorporates response into conversation
+2. Server ensures database is initialized (`ensureDb()`) before any database operations
+3. Server validates arguments with Zod schemas
+4. Server executes tool logic
+5. Server returns response with content blocks
+6. Claude incorporates response into conversation
+
+**Note:** Database initialization happens automatically before every tool call that requires database access (as of v1.1.1+). This prevents "Database not initialized" errors.
 
 ### Error Handling
 
-- Invalid arguments → ZodError → Detailed validation error
-- Missing event → Returns "Event not found" message
-- Database errors → Propagate to Claude with error message
-- ICS generation errors → Caught and returned as error message
+- **Database initialization errors** → Logged and propagated with error message
+- **Invalid arguments** → ZodError → Detailed validation error
+- **Missing event** → Returns "Event not found" message
+- **Database errors** → Propagate to Claude with error message
+- **ICS generation errors** → Caught and returned as error message
+- **Dashboard startup errors** → Logged to stderr, MCP server continues (non-fatal)
 
 ## Performance Considerations
 
@@ -290,8 +300,10 @@ When Claude calls a tool:
 - **No caching needed** - Generation is fast enough
 
 ### Dashboard
+- **Auto-starts on MCP server startup** - No manual launch needed (v1.1.1+)
 - **Single-page app** - No page reloads
 - **REST API** - Simple HTTP JSON endpoints
+- **Database initialization** - Initializes database before starting HTTP server
 - **No database polling** - Client-side state management
 - **Static HTML** - No build step required
 

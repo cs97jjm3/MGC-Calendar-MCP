@@ -2,6 +2,20 @@
 
 All notable changes to MGC Calendar MCP will be documented in this file.
 
+## [1.1.1] - 2026-01-12
+
+### Fixed
+- **Database initialization:** Database now automatically initializes before any operations, preventing "Database not initialized" errors
+- **Dashboard auto-start:** Dashboard now automatically starts when MCP server starts (no need to manually launch)
+- **Error handling:** Improved error logging for dashboard startup failures
+- **Process management:** Better handling of dashboard process spawning with proper error capture
+
+### Changed
+- Dashboard auto-starts on MCP server startup (opens browser after 3 seconds)
+- All database operations now ensure database is initialized first
+- Dashboard server initializes database before starting HTTP server
+- Improved error messages for database and dashboard startup issues
+
 ## [1.1.0] - 2026-01-12
 
 ### Added

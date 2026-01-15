@@ -96,18 +96,22 @@ Add this configuration (replace with your actual path):
 
 5. **Restart Claude Desktop**
 
+**Note:** The dashboard will automatically start when Claude Desktop launches. It will open in your default browser after a few seconds. If it doesn't, you can manually launch it with the `launch_dashboard` tool.
+
 ## Usage
 
 ### Quick Start with Dashboard
 
 The easiest way to use MGC Calendar is through the web dashboard:
 
-1. **Launch dashboard from Claude Desktop:**
-   ```
-   "Launch the dashboard"
-   ```
+**The dashboard automatically starts when you launch Claude Desktop!** Just open http://localhost:3737 in your browser after starting Claude Desktop.
 
-2. **Click any event** in the calendar to edit it
+Or manually launch it from Claude Desktop:
+```
+"Launch the dashboard"
+```
+
+1. **Click any event** in the calendar to edit it
 
 3. **Add your LinkedIn post** to the Description field (this is your formatted article)
 
@@ -347,6 +351,11 @@ Make sure you're importing from:
 3. Restart dashboard: Close tab, run `npm run dashboard`
 
 ## Version History
+
+**v1.1.1** (January 2026)
+- Fixed database initialization errors - database now auto-initializes before all operations
+- Dashboard now auto-starts when MCP server starts
+- Improved error handling and logging for dashboard startup
 
 **v1.1.0** (January 2026)
 - Bulk import/export (ICS and JSON formats)
