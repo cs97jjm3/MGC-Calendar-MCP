@@ -845,6 +845,7 @@
                 </div>
 
                 <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" onclick="deleteEventFromModal()" id="deleteEventBtn" style="display:none; margin-right: auto;">🗑️ Delete Event</button>
                     <button type="button" class="btn btn-success" onclick="postEventToLinkedIn()" id="postEventLinkedInBtn">📤 Post to LinkedIn</button>
                     <button type="button" class="btn btn-secondary" onclick="downloadEventICS()" id="downloadICSBtn">💾 Download ICS</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -1260,18 +1261,36 @@
             document.getElementById('modalTitle').textContent = 'Create Event';
             document.getElementById('eventForm').reset();
             document.getElementById('eventId').value = '';
+            document.getElementById('deleteEventBtn').style.display = 'none';
             document.getElementById('eventModal').classList.add('active');
+        }
+
+        async function deleteEventFromModal() {
+            const eventId = document.getElementById('eventId').value;
+            if (!eventId) return;
+            
+            if (!confirm('Are you sure you want to delete this event?')) return;
+            
+            await deleteEvent(parseInt(eventId));
+            closeModal();
         }
 
         function editEvent(id) {
             const event = events.find(e => e.id === id);
             if (!event) return;
 
+            console.log('Loading event:', event.id);
+            console.log('Description length:', (event.description || '').length);
+            console.log('Description content:', event.description);
+
             document.getElementById('modalTitle').textContent = 'Edit Event';
             document.getElementById('eventId').value = event.id;
+            document.getElementById('deleteEventBtn').style.display = 'block';
             document.getElementById('title').value = event.title;
             document.getElementById('description').value = event.description || '';
             document.getElementById('location').value = event.location || '';
+            
+            console.log('Textarea value length:', document.getElementById('description').value.length);
             document.getElementById('startDate').value = event.startDate;
             document.getElementById('endDate').value = event.endDate || '';
             document.getElementById('startTime').value = event.startTime || '';
