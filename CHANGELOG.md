@@ -2,6 +2,18 @@
 
 All notable changes to MGC Calendar MCP will be documented in this file.
 
+## [1.1.2] - 2026-01-19
+
+### Added
+- **Dashboard UI:** Delete button in event edit modal for easier event removal
+- **Dashboard UX:** Delete button hidden in create mode, visible only when editing
+- **Dashboard UX:** Confirmation dialog before deleting events
+- **Debugging:** Console logging for event loading to troubleshoot description field issues
+
+### Changed
+- Event modal now shows delete button positioned on the left side when editing
+- Improved modal button layout with better spacing
+
 ## [1.1.1] - 2026-01-12
 
 ### Fixed

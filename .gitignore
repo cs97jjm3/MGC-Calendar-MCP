@@ -36,3 +36,6 @@ coverage/
 *.tmp
 *.temp
 
+# MCPB bundle (generated, not source)
+*.mcpb
+
