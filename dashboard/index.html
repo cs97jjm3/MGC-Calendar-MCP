@@ -1053,10 +1053,28 @@
             if (dayEvents.length > 0) {
                 eventsHtml = '<div class="day-events">';
                 dayEvents.slice(0, 3).forEach(event => {
-                    // Event shows as GREEN if description is 100+ chars (LinkedIn-ready)
+                    // Event color logic:
+                    // 1. Published events = PURPLE (#9C27B0)
+                    // 2. Events with content (description 100+ chars) = GREEN
+                    // 3. Scheduled events = BLUE (default)
+                    const isPublished = event.status === 'published';
                     const hasContent = (event.description || '').trim().length >= 100;
-                    const eventClass = hasContent ? 'day-event has-content' : 'day-event';
-                    eventsHtml += `<div class="${eventClass}" onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</div>`;
+                    
+                    // Debug logging
+                    console.log(`Event ${event.id} "${event.title}" - status: "${event.status}", isPublished: ${isPublished}, hasContent: ${hasContent}`);
+                    
+                    let eventClass = 'day-event';
+                    let backgroundColor = '';
+                    
+                    if (isPublished) {
+                        backgroundColor = 'background:#9C27B0'; // Purple for published
+                    } else if (hasContent) {
+                        eventClass += ' has-content'; // Green for content-ready
+                    }
+                    // else: default blue styling from .day-event class
+                    
+                    const style = backgroundColor ? ` style="${backgroundColor}"` : '';
+                    eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</div>`;
                 });
                 if (dayEvents.length > 3) {
                     eventsHtml += `<div class="day-event" style="background:#64748b">+${dayEvents.length - 3} more</div>`;
@@ -1115,9 +1133,25 @@
                     
                     let eventsHtml = '';
                     dayEvents.forEach(event => {
+                        // Event color logic:
+                        // 1. Published events = PURPLE (#9C27B0)
+                        // 2. Events with content (description 100+ chars) = GREEN
+                        // 3. Scheduled events = BLUE (default)
+                        const isPublished = event.status === 'published';
                         const hasContent = (event.description || '').trim().length >= 100;
-                        const eventClass = hasContent ? 'week-event has-content' : 'week-event';
-                        eventsHtml += `<div class="${eventClass}" onclick="event.stopPropagation(); editEvent(${event.id})">${escapeHtml(event.title)}</div>`;
+                        
+                        let eventClass = 'week-event';
+                        let backgroundColor = '';
+                        
+                        if (isPublished) {
+                            backgroundColor = 'background:#9C27B0'; // Purple for published
+                        } else if (hasContent) {
+                            eventClass += ' has-content'; // Green for content-ready
+                        }
+                        // else: default blue styling from .week-event class
+                        
+                        const style = backgroundColor ? ` style="${backgroundColor}"` : '';
+                        eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})">${escapeHtml(event.title)}</div>`;
                     });
                     
                     html += `<div class="week-cell">${eventsHtml}</div>`;
