@@ -1,33 +1,11 @@
 <!DOCTYPE html>
 <!--
-  MGC Calendar Dashboard v1.1.0
+  MGC Calendar Dashboard v1.2.0 - WITH FILTERS & LEGEND
   
-  A simple, single-file web dashboard for managing calendar events.
-  No frameworks, no build process - just HTML, CSS, and vanilla JavaScript.
-  
-  Key Features:
-  - Month/Week/List calendar views
-  - Import/Export events (ICS and JSON formats)
-  - Event tags/categories for organization
-  - Scheduled vs Published status tracking
-  - Click events to edit them
-  - Click empty days to create new events
-  - Description field = LinkedIn post (100-3000 chars)
-  - Content field = Optional article draft/notes
-  - "Post to LinkedIn" button copies description and opens LinkedIn
-  - Events with descriptions 100+ chars show as GREEN
-  - Color-coded status indicators (blue=scheduled, green=published)
-  
-  Data Flow:
-  1. JavaScript fetches events from /api/events (served by dashboard.ts)
-  2. Events are rendered in the selected view (month/week/list)
-  3. Clicking events opens edit modal with "Post to LinkedIn" button
-  4. Saving updates the database via PUT /api/events/:id
-  
-  Customization:
-  - Colors: Search for #2563eb (blue) and #16a34a (green) to change theme
-  - Add more views: Copy renderMonthView() pattern
-  - Change content threshold: Search for "100" (minimum chars for LinkedIn)
+  Enhanced features:
+  - List view filtering (Status, Tags, Date Range)
+  - Color legend on all views
+  - Improved tooltips
   
   Author: James Murrell (MGC)
   License: MIT
@@ -52,7 +30,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -188,6 +166,49 @@
             cursor: not-allowed;
         }
 
+        /* Color Legend */
+        .color-legend {
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            color: #64748b;
+            margin-right: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-color.blue {
+            background: #2563eb;
+        }
+
+        .legend-color.green {
+            background: #16a34a;
+        }
+
+        .legend-color.purple {
+            background: #9C27B0;
+        }
+
         /* Calendar Views */
         .view-container {
             background: white;
@@ -254,9 +275,10 @@
         .calendar-day {
             background: white;
             min-height: 100px;
-            padding: 8px;
+            padding: 4px;
             cursor: pointer;
             transition: background 0.2s;
+            overflow: hidden;
         }
 
         .calendar-day:hover {
@@ -274,8 +296,8 @@
 
         .day-number {
             font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
+            font-size: 13px;
+            margin-bottom: 2px;
         }
 
         .day-events {
@@ -287,13 +309,15 @@
         .day-event {
             background: #2563eb;
             color: white;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
-            font-size: 11px;
+            font-size: 10px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             cursor: pointer;
+            max-width: 100%;
+            display: block;
         }
 
         .day-event:hover {
@@ -387,6 +411,62 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* List View Filters */
+        .list-filters {
+            display: flex;
+            gap: 15px;
+            padding: 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            min-width: 150px;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .filter-reset {
+            padding: 8px 16px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+            margin-left: auto;
+        }
+
+        .filter-reset:hover {
+            background: #cbd5e1;
         }
 
         .event-item {
@@ -673,7 +753,7 @@
 <body>
     <div class="container">
        <header><img src="https://github.com/cs97jjm3/MGC-Calendar-MCP/blob/main/dashboard/logo.png?raw=true" alt="MGC Logo" width=200 height=200>
-   <h1> CLaude Desktop Calendar Dashboard</h1>
+   <h1> Claude Desktop Calendar Dashboard</h1>
 
     <p class="subtitle">
         Plan work, hold content, publish without OAuth
@@ -724,8 +804,24 @@
                 <input type="file" id="importFile" accept=".ics,.json" style="display:none" onchange="handleImport()">
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
                 <button class="btn btn-secondary" onclick="showExportMenu()">📤 Export</button>
-                <button class="btn btn-secondary" onclick="downloadAllICS()">💾 Download All ICS</button>
                 <button class="btn" onclick="showCreateModal()">+ Create Event</button>
+            </div>
+        </div>
+
+        <!-- Color Legend (shown on all views) -->
+        <div class="color-legend">
+            <span class="legend-title">Event Colors:</span>
+            <div class="legend-item" title="Events without content (description under 100 chars)">
+                <div class="legend-color blue"></div>
+                <span>Scheduled</span>
+            </div>
+            <div class="legend-item" title="Events with content ready (description 100+ chars)">
+                <div class="legend-color green"></div>
+                <span>Content Ready</span>
+            </div>
+            <div class="legend-item" title="Events that have been published">
+                <div class="legend-color purple"></div>
+                <span>Published</span>
             </div>
         </div>
 
@@ -734,9 +830,9 @@
             <div class="view-header">
                 <h2>Calendar</h2>
                 <div class="nav-controls">
-                    <button class="nav-btn" onclick="navigateMonth(-1)">←</button>
+                    <button class="nav-btn" onclick="navigateMonth(-1)" title="Previous month">←</button>
                     <div class="current-period" id="currentMonth"></div>
-                    <button class="nav-btn" onclick="navigateMonth(1)">→</button>
+                    <button class="nav-btn" onclick="navigateMonth(1)" title="Next month">→</button>
                     <button class="btn btn-secondary btn-small" onclick="goToToday()">Today</button>
                 </div>
             </div>
@@ -748,9 +844,9 @@
             <div class="view-header">
                 <h2>Week</h2>
                 <div class="nav-controls">
-                    <button class="nav-btn" onclick="navigateWeek(-1)">←</button>
+                    <button class="nav-btn" onclick="navigateWeek(-1)" title="Previous week">←</button>
                     <div class="current-period" id="currentWeek"></div>
-                    <button class="nav-btn" onclick="navigateWeek(1)">→</button>
+                    <button class="nav-btn" onclick="navigateWeek(1)" title="Next week">→</button>
                     <button class="btn btn-secondary btn-small" onclick="goToToday()">Today</button>
                 </div>
             </div>
@@ -761,6 +857,41 @@
         <div id="listView" class="events-list hidden">
             <div class="events-header">
                 <h2>All Events</h2>
+            </div>
+            <div class="list-filters">
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filterStatus" onchange="applyListFilters()">
+                        <option value="all">All</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="content-ready">Content Ready</option>
+                        <option value="published">Published</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Tag</label>
+                    <select id="filterTag" onchange="applyListFilters()">
+                        <option value="all">All</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="Meeting">Meeting</option>
+                        <option value="Deadline">Deadline</option>
+                        <option value="Personal">Personal</option>
+                        <option value="Client">Client</option>
+                        <option value="Internal">Internal</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <select id="filterDate" onchange="applyListFilters()">
+                        <option value="all">All</option>
+                        <option value="past">Past</option>
+                        <option value="today">Today</option>
+                        <option value="thisweek">This Week</option>
+                        <option value="thismonth">This Month</option>
+                        <option value="upcoming">Upcoming</option>
+                    </select>
+                </div>
+                <button class="filter-reset" onclick="resetListFilters()" title="Reset all filters">Reset Filters</button>
             </div>
             <div id="eventsList"></div>
         </div>
@@ -777,17 +908,17 @@
                 
                 <div class="form-group">
                     <label for="title">Event Title *</label>
-                    <input type="text" id="title" required>
+                    <input type="text" id="title" required placeholder="Enter event title">
                 </div>
 
                 <div class="form-group">
-                    <label for="description">Description</label>
-                    <textarea id="description"></textarea>
+                    <label for="description">Description (LinkedIn Post)</label>
+                    <textarea id="description" placeholder="Enter your LinkedIn post content here (100-3000 characters for posting)"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="location">Location</label>
-                    <input type="text" id="location">
+                    <input type="text" id="location" placeholder="Event location (optional)">
                 </div>
 
                 <div class="form-row">
@@ -845,9 +976,9 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-danger" onclick="deleteEventFromModal()" id="deleteEventBtn" style="display:none; margin-right: auto;">🗑️ Delete Event</button>
-                    <button type="button" class="btn btn-success" onclick="postEventToLinkedIn()" id="postEventLinkedInBtn">📤 Post to LinkedIn</button>
-                    <button type="button" class="btn btn-secondary" onclick="downloadEventICS()" id="downloadICSBtn">💾 Download ICS</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteEventFromModal()" id="deleteEventBtn" style="display:none; margin-right: auto;" title="Delete this event">🗑️ Delete Event</button>
+                    <button type="button" class="btn btn-success" onclick="postEventToLinkedIn()" id="postEventLinkedInBtn" title="Copy description to clipboard and open LinkedIn">📤 Post to LinkedIn</button>
+                    <button type="button" class="btn btn-secondary" onclick="downloadEventICS()" id="downloadICSBtn" title="Download ICS file for this event">💾 Download ICS</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                     <button type="submit" class="btn">Save Event</button>
                 </div>
@@ -861,7 +992,7 @@
             <div class="modal-header">
                 <h2 id="contentModalTitle">Edit Article Content</h2>
                 <div>
-                    <button type="button" class="btn btn-success btn-small" onclick="postToLinkedIn()" id="postLinkedInBtn" disabled>
+                    <button type="button" class="btn btn-success btn-small" onclick="postToLinkedIn()" id="postLinkedInBtn" disabled title="Post description to LinkedIn">
                         Post to LinkedIn
                     </button>
                 </div>
@@ -870,7 +1001,7 @@
                 <input type="hidden" id="contentEventId" value="">
                 
                 <div class="form-group">
-                    <label for="content">Article Content</label>
+                    <label for="content">Article Content (Optional notes/draft)</label>
                     <textarea id="content" class="content-editor" placeholder="Write or paste your article content here..."></textarea>
                     <div class="char-count" id="charCount">0 / 3000 characters</div>
                 </div>
@@ -887,22 +1018,26 @@
         // ============================================
         // GLOBAL STATE
         // ============================================
-        let events = []; // All calendar events from database
-        let currentView = 'month'; // Current view: 'month', 'week', or 'list'
-        let currentDate = new Date(); // Always start at actual current month
-        let currentEditingEvent = null; // Track which event is being edited in content modal
+        let events = [];
+        let currentView = 'month';
+        let currentDate = new Date();
+        let currentEditingEvent = null;
+        
+        // Filter state for list view
+        let listFilters = {
+            status: 'all',
+            tag: 'all',
+            date: 'all'
+        };
 
         // ============================================
         // INITIALIZATION
         // ============================================
-        // Load events on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadEvents();
             
-            // Update character count on content textarea
             document.getElementById('content').addEventListener('input', updateCharCount);
             
-            // Handle status radio button changes
             document.querySelectorAll('input[name="status"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     const publishedGroup = document.getElementById('published-date-group');
@@ -914,17 +1049,11 @@
         // ============================================
         // DATA LOADING
         // ============================================
-        /**
-         * Load all events from the API and render the current view.
-         * Events are sorted by date (soonest first).
-         */
         async function loadEvents() {
             try {
                 const response = await fetch('/api/events');
                 events = await response.json();
                 
-                // Sort events by date and time (soonest first)
-                // This ensures events appear in chronological order everywhere
                 events.sort((a, b) => {
                     const dateA = new Date(a.startDate + 'T' + (a.startTime || '00:00'));
                     const dateB = new Date(b.startDate + 'T' + (b.startTime || '00:00'));
@@ -947,25 +1076,100 @@
             charCountEl.textContent = `${count} / 3000 characters`;
             charCountEl.classList.toggle('warning', count > 3000);
             
-            // Enable LinkedIn post button if content is reasonable length
             postBtn.disabled = count < 100 || count > 3000;
+        }
+
+        // ============================================
+        // LIST VIEW FILTERING
+        // ============================================
+        function applyListFilters() {
+            listFilters.status = document.getElementById('filterStatus').value;
+            listFilters.tag = document.getElementById('filterTag').value;
+            listFilters.date = document.getElementById('filterDate').value;
+            renderListView();
+        }
+
+        function resetListFilters() {
+            document.getElementById('filterStatus').value = 'all';
+            document.getElementById('filterTag').value = 'all';
+            document.getElementById('filterDate').value = 'all';
+            listFilters = { status: 'all', tag: 'all', date: 'all' };
+            renderListView();
+        }
+
+        function getFilteredEvents() {
+            let filtered = [...events];
+            
+            // Filter by status
+            if (listFilters.status !== 'all') {
+                if (listFilters.status === 'content-ready') {
+                    // Content ready means: has 100+ char description and NOT published
+                    filtered = filtered.filter(e => {
+                        const hasContent = (e.description || '').trim().length >= 100;
+                        const notPublished = e.status !== 'published';
+                        return hasContent && notPublished;
+                    });
+                } else {
+                    filtered = filtered.filter(e => e.status === listFilters.status);
+                }
+            }
+            
+            // Filter by tag
+            if (listFilters.tag !== 'all') {
+                filtered = filtered.filter(e => {
+                    const tags = (e.tags || '').split(',').map(t => t.trim());
+                    return tags.includes(listFilters.tag);
+                });
+            }
+            
+            // Filter by date range
+            if (listFilters.date !== 'all') {
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                
+                const today = new Date(now);
+                const weekStart = new Date(now);
+                weekStart.setDate(now.getDate() - now.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+                
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                monthEnd.setHours(23, 59, 59, 999);
+                
+                filtered = filtered.filter(e => {
+                    const eventDate = new Date(e.startDate + 'T00:00:00');
+                    
+                    switch(listFilters.date) {
+                        case 'past':
+                            return eventDate < today;
+                        case 'today':
+                            return eventDate.toDateString() === today.toDateString();
+                        case 'thisweek':
+                            return eventDate >= weekStart && eventDate <= weekEnd;
+                        case 'thismonth':
+                            return eventDate >= monthStart && eventDate <= monthEnd;
+                        case 'upcoming':
+                            return eventDate >= today;
+                        default:
+                            return true;
+                    }
+                });
+            }
+            
+            return filtered;
         }
 
         // ============================================
         // VIEW MANAGEMENT
         // ============================================
-        /**
-         * Switch between Month, Week, and List views.
-         * Updates button states and shows/hides the appropriate view container.
-         */
         function switchView(view) {
             currentView = view;
             
-            // Update buttons
             document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
-            // Show/hide views
             document.getElementById('monthView').classList.toggle('hidden', view !== 'month');
             document.getElementById('weekView').classList.toggle('hidden', view !== 'week');
             document.getElementById('listView').classList.toggle('hidden', view !== 'list');
@@ -987,38 +1191,31 @@
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             
-            // Update header
             document.getElementById('currentMonth').textContent = 
                 currentDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
             
-            // Get first day of month and number of days
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
             const daysInMonth = lastDay.getDate();
             const startingDayOfWeek = firstDay.getDay();
             
-            // Build calendar grid
             let html = '';
             
-            // Headers
             const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             dayNames.forEach(day => {
                 html += `<div class="calendar-header">${day}</div>`;
             });
             
-            // Calculate previous month days to show
             const prevMonthDays = startingDayOfWeek;
             const prevMonth = month === 0 ? 11 : month - 1;
             const prevYear = month === 0 ? year - 1 : year;
             const prevMonthLastDay = new Date(prevYear, prevMonth + 1, 0).getDate();
             
-            // Previous month days
             for (let i = prevMonthDays - 1; i >= 0; i--) {
                 const day = prevMonthLastDay - i;
                 html += renderDay(prevYear, prevMonth, day, true);
             }
             
-            // Current month days
             const today = new Date();
             for (let day = 1; day <= daysInMonth; day++) {
                 const isToday = day === today.getDate() && 
@@ -1027,9 +1224,8 @@
                 html += renderDay(year, month, day, false, isToday);
             }
             
-            // Next month days to fill grid
             const totalCells = html.split('calendar-day').length - 1;
-            const remainingCells = 42 - totalCells; // 6 rows of 7 days
+            const remainingCells = 42 - totalCells;
             const nextMonth = month === 11 ? 0 : month + 1;
             const nextYear = month === 11 ? year + 1 : year;
             
@@ -1053,37 +1249,34 @@
             if (dayEvents.length > 0) {
                 eventsHtml = '<div class="day-events">';
                 dayEvents.slice(0, 3).forEach(event => {
-                    // Event color logic:
-                    // 1. Published events = PURPLE (#9C27B0)
-                    // 2. Events with content (description 100+ chars) = GREEN
-                    // 3. Scheduled events = BLUE (default)
                     const isPublished = event.status === 'published';
                     const hasContent = (event.description || '').trim().length >= 100;
                     
-                    // Debug logging
-                    console.log(`Event ${event.id} "${event.title}" - status: "${event.status}", isPublished: ${isPublished}, hasContent: ${hasContent}`);
-                    
                     let eventClass = 'day-event';
                     let backgroundColor = '';
+                    let tooltipText = event.title;
                     
                     if (isPublished) {
-                        backgroundColor = 'background:#9C27B0'; // Purple for published
+                        backgroundColor = 'background:#9C27B0';
+                        tooltipText += ' (Published)';
                     } else if (hasContent) {
-                        eventClass += ' has-content'; // Green for content-ready
+                        eventClass += ' has-content';
+                        tooltipText += ' (Content Ready)';
+                    } else {
+                        tooltipText += ' (Scheduled)';
                     }
-                    // else: default blue styling from .day-event class
                     
                     const style = backgroundColor ? ` style="${backgroundColor}"` : '';
-                    eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(event.title)}">${escapeHtml(event.title)}</div>`;
+                    eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(tooltipText)}">${escapeHtml(event.title)}</div>`;
                 });
                 if (dayEvents.length > 3) {
-                    eventsHtml += `<div class="day-event" style="background:#64748b">+${dayEvents.length - 3} more</div>`;
+                    eventsHtml += `<div class="day-event" style="background:#64748b" title="Click day to see all events">+${dayEvents.length - 3} more</div>`;
                 }
                 eventsHtml += '</div>';
             }
             
             return `
-                <div class="${classes}" onclick="createEventOnDate('${dateStr}')">
+                <div class="${classes}" onclick="createEventOnDate('${dateStr}')" title="Click to create event on this date">
                     <div class="day-number">${day}</div>
                     ${eventsHtml}
                 </div>
@@ -1102,10 +1295,8 @@
             
             let html = '<div class="week-grid">';
             
-            // Time column header
             html += '<div class="time-slot"></div>';
             
-            // Day headers
             const today = new Date();
             for (let i = 0; i < 7; i++) {
                 const day = new Date(startOfWeek);
@@ -1115,7 +1306,6 @@
                 html += `<div class="${classes}">${day.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })}</div>`;
             }
             
-            // Time slots (8am to 8pm)
             for (let hour = 8; hour <= 20; hour++) {
                 html += `<div class="time-slot">${hour}:00</div>`;
                 
@@ -1126,32 +1316,32 @@
                     
                     const dayEvents = events.filter(e => {
                         if (e.startDate !== dateStr) return false;
-                        if (!e.startTime) return hour === 8; // All-day events show at 8am
+                        if (!e.startTime) return hour === 8;
                         const eventHour = parseInt(e.startTime.split(':')[0]);
                         return eventHour === hour;
                     });
                     
                     let eventsHtml = '';
                     dayEvents.forEach(event => {
-                        // Event color logic:
-                        // 1. Published events = PURPLE (#9C27B0)
-                        // 2. Events with content (description 100+ chars) = GREEN
-                        // 3. Scheduled events = BLUE (default)
                         const isPublished = event.status === 'published';
                         const hasContent = (event.description || '').trim().length >= 100;
                         
                         let eventClass = 'week-event';
                         let backgroundColor = '';
+                        let tooltipText = event.title;
                         
                         if (isPublished) {
-                            backgroundColor = 'background:#9C27B0'; // Purple for published
+                            backgroundColor = 'background:#9C27B0';
+                            tooltipText += ' (Published)';
                         } else if (hasContent) {
-                            eventClass += ' has-content'; // Green for content-ready
+                            eventClass += ' has-content';
+                            tooltipText += ' (Content Ready)';
+                        } else {
+                            tooltipText += ' (Scheduled)';
                         }
-                        // else: default blue styling from .week-event class
                         
                         const style = backgroundColor ? ` style="${backgroundColor}"` : '';
-                        eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})">${escapeHtml(event.title)}</div>`;
+                        eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(tooltipText)}">${escapeHtml(event.title)}</div>`;
                     });
                     
                     html += `<div class="week-cell">${eventsHtml}</div>`;
@@ -1164,19 +1354,20 @@
 
         function renderListView() {
             const container = document.getElementById('eventsList');
+            const filtered = getFilteredEvents();
             
-            if (events.length === 0) {
+            if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📅</div>
-                        <h3>No events yet</h3>
-                        <p>Create your first event to get started</p>
+                        <h3>No events found</h3>
+                        <p>${events.length > 0 ? 'Try adjusting your filters' : 'Create your first event to get started'}</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = events.map(event => {
+            container.innerHTML = filtered.map(event => {
                 const hasContent = (event.description || '').trim().length >= 100;
                 const isPublished = event.status === 'published';
                 const statusClass = isPublished ? 'status-published' : 'status-scheduled';
@@ -1190,8 +1381,8 @@
                     <div class="event-details">
                         <h3>
                             ${escapeHtml(event.title)}
-                            ${isPublished ? '<span class="status-icon">✓</span>' : ''}
-                            ${hasContent ? '<span class="content-indicator">Has Content</span>' : ''}
+                            ${isPublished ? '<span class="status-icon" title="Published">✓</span>' : ''}
+                            ${hasContent ? '<span class="content-indicator" title="Has LinkedIn-ready content (100+ chars)">Has Content</span>' : ''}
                         </h3>
                         ${tagBadges ? `<div style="margin-top: 8px;">${tagBadges}</div>` : ''}
                         <div class="event-meta">
@@ -1202,21 +1393,21 @@
                                 ${isPublished ? ` - Published ${formatDate(event.publishedDate || event.startDate)}` : ''}
                             </div>
                             ${event.location ? `<div>📍 ${escapeHtml(event.location)}</div>` : ''}
-                            ${event.description ? `<div>${escapeHtml(event.description)}</div>` : ''}
+                            ${event.description ? `<div>${escapeHtml(event.description).substring(0, 200)}${event.description.length > 200 ? '...' : ''}</div>` : ''}
                         </div>
                         ${!isPublished ? `
-                            <label class="publish-checkbox">
+                            <label class="publish-checkbox" title="Mark this event as published">
                                 <input type="checkbox" onchange="markPublished(${event.id})">
                                 Mark as published
                             </label>
                         ` : ''}
                     </div>
                     <div class="event-actions">
-                        <button class="btn btn-success btn-small" onclick="editContent(${event.id})">
+                        <button class="btn btn-success btn-small" onclick="editContent(${event.id})" title="${hasContent ? 'Edit article content' : 'Add article content'}">
                             ${hasContent ? 'Edit Content' : 'Add Content'}
                         </button>
-                        <button class="btn btn-secondary btn-small" onclick="editEvent(${event.id})">Edit</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteEvent(${event.id})">Delete</button>
+                        <button class="btn btn-secondary btn-small" onclick="editEvent(${event.id})" title="Edit event details">Edit</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteEvent(${event.id})" title="Delete this event">Delete</button>
                     </div>
                 </div>
             `}).join('');
@@ -1225,11 +1416,6 @@
         // ============================================
         // STATISTICS
         // ============================================
-        /**
-         * Update the statistics cards at the top of the dashboard.
-         * "With Content" checks if description field has 100+ characters.
-         * This indicates the event has a LinkedIn-ready post.
-         */
         function updateStats() {
             const now = new Date();
             const currentMonth = now.getMonth();
@@ -1246,7 +1432,6 @@
             }).length;
             document.getElementById('thisMonth').textContent = thisMonth;
 
-            // Check description field for LinkedIn content (100+ chars)
             const withContent = events.filter(e => {
                 const desc = (e.description || '').trim();
                 return desc.length >= 100;
@@ -1313,31 +1498,23 @@
             const event = events.find(e => e.id === id);
             if (!event) return;
 
-            console.log('Loading event:', event.id);
-            console.log('Description length:', (event.description || '').length);
-            console.log('Description content:', event.description);
-
             document.getElementById('modalTitle').textContent = 'Edit Event';
             document.getElementById('eventId').value = event.id;
             document.getElementById('deleteEventBtn').style.display = 'block';
             document.getElementById('title').value = event.title;
             document.getElementById('description').value = event.description || '';
             document.getElementById('location').value = event.location || '';
-            
-            console.log('Textarea value length:', document.getElementById('description').value.length);
             document.getElementById('startDate').value = event.startDate;
             document.getElementById('endDate').value = event.endDate || '';
             document.getElementById('startTime').value = event.startTime || '';
             document.getElementById('endTime').value = event.endTime || '';
             document.getElementById('allDay').checked = event.allDay;
             
-            // Set tags
             const tags = (event.tags || '').split(',').filter(t => t.trim());
             document.querySelectorAll('.tag-checkbox').forEach(checkbox => {
                 checkbox.checked = tags.includes(checkbox.value);
             });
             
-            // Set status
             const status = event.status || 'scheduled';
             document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
             document.getElementById('published-date-group').style.display = status === 'published' ? 'block' : 'none';
@@ -1355,7 +1532,6 @@
             document.getElementById('contentEventId').value = event.id;
             document.getElementById('content').value = event.content || '';
             
-            // Check if description is suitable for LinkedIn
             const descLength = (event.description || '').trim().length;
             const postBtn = document.getElementById('postLinkedInBtn');
             postBtn.disabled = descLength < 100 || descLength > 3000;
@@ -1368,13 +1544,6 @@
             document.getElementById('eventModal').classList.remove('active');
         }
 
-        // ============================================
-        // ICS DOWNLOAD
-        // ============================================
-        /**
-         * Download ICS file for the current event being edited.
-         * Fetches the ICS file from the server and triggers browser download.
-         */
         async function downloadEventICS() {
             const eventId = document.getElementById('eventId').value;
             if (!eventId) {
@@ -1397,54 +1566,15 @@
                 document.body.removeChild(a);
             } catch (error) {
                 console.error('Failed to download ICS:', error);
-                alert('Failed to download ICS file. The file might not exist yet.');
-            }
-        }
-
-        /**
-         * Download all events as a single combined ICS file.
-         * Creates a calendar file with all events that can be imported at once.
-         */
-        async function downloadAllICS() {
-            if (events.length === 0) {
-                alert('No events to download.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/events/all/ics');
-                if (!response.ok) throw new Error('Failed to download all ICS');
-                
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `mgc-calendar-all-events.ics`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-                
-                alert(`✅ Downloaded ${events.length} events as ICS file!\n\nYou can now import this into any calendar app.`);
-            } catch (error) {
-                console.error('Failed to download all ICS:', error);
                 alert('Failed to download ICS file.');
             }
         }
 
-        // ============================================
-        // LINKEDIN POSTING
-        // ============================================
-        /**
-         * Post event to LinkedIn from the event edit modal.
-         * Copies the DESCRIPTION field (not content) to clipboard and opens LinkedIn.
-         * Description should be 100-3000 chars and formatted for LinkedIn.
-         */
         async function postEventToLinkedIn() {
             const description = document.getElementById('description').value.trim();
             
             if (!description || description.length < 100) {
-                alert('Please add a description (min 100 characters) to post to LinkedIn.\n\nThe description field should contain your formatted LinkedIn post.');
+                alert('Please add a description (min 100 characters) to post to LinkedIn.\\n\\nThe description field should contain your formatted LinkedIn post.');
                 return;
             }
 
@@ -1453,14 +1583,10 @@
                 return;
             }
 
-            // Copy description to clipboard
             try {
                 await navigator.clipboard.writeText(description);
-                
-                // Open LinkedIn post creation page
                 window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
-                
-                alert('✅ LinkedIn post copied to clipboard!\n\nLinkedIn is opening in a new tab.\nJust paste (Ctrl+V or Cmd+V) and publish!');
+                alert('✅ LinkedIn post copied to clipboard!\\n\\nLinkedIn is opening in a new tab.\\nJust paste (Ctrl+V or Cmd+V) and publish!');
             } catch (error) {
                 console.error('Failed to copy description:', error);
                 alert('Failed to copy to clipboard. Please copy the description field manually.');
@@ -1476,13 +1602,8 @@
             if (!confirm('Are you sure you want to delete this event?')) return;
 
             try {
-                const response = await fetch(`/api/events/${id}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    await loadEvents();
-                }
+                const response = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+                if (response.ok) await loadEvents();
             } catch (error) {
                 console.error('Failed to delete event:', error);
                 alert('Failed to delete event');
@@ -1506,13 +1627,9 @@
                 return;
             }
 
-            // Copy description to clipboard
             try {
                 await navigator.clipboard.writeText(description);
-                
-                // Open LinkedIn post creation page
                 window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
-                
                 alert('LinkedIn post copied to clipboard! Paste it into LinkedIn and publish.');
             } catch (error) {
                 console.error('Failed to copy description:', error);
@@ -1520,9 +1637,6 @@
             }
         }
 
-        // ============================================
-        // IMPORT/EXPORT
-        // ============================================
         async function handleImport() {
             const fileInput = document.getElementById('importFile');
             const file = fileInput.files[0];
@@ -1539,7 +1653,7 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(`✅ Import complete!\n\nSuccessfully imported: ${result.success}\nFailed: ${result.failed}`);
+                    alert(`✅ Import complete!\\n\\nSuccessfully imported: ${result.success}\\nFailed: ${result.failed}`);
                     if (result.errors && result.errors.length > 0) {
                         console.error('Import errors:', result.errors);
                     }
@@ -1552,12 +1666,11 @@
                 alert('Failed to import file');
             }
             
-            // Reset file input
             fileInput.value = '';
         }
         
         function showExportMenu() {
-            const format = prompt('Export format:\n\nEnter "json" for JSON\nEnter "ics" for ICS calendar file', 'json');
+            const format = prompt('Export format:\\n\\nEnter "json" for JSON\\nEnter "ics" for ICS calendar file', 'json');
             if (format === 'json' || format === 'ics') {
                 exportEvents(format);
             } else if (format !== null) {
@@ -1569,15 +1682,10 @@
             window.location.href = `/api/export?format=${format}`;
         }
         
-        // ============================================
-        // MARK AS PUBLISHED
-        // ============================================
         async function markPublished(id) {
             try {
                 const response = await fetch(`/api/events/${id}/publish`, { method: 'POST' });
-                if (response.ok) {
-                    await loadEvents();
-                }
+                if (response.ok) await loadEvents();
             } catch (error) {
                 console.error('Failed to mark as published:', error);
             }
@@ -1587,12 +1695,8 @@
             e.preventDefault();
 
             const id = document.getElementById('eventId').value;
-            
-            // Get selected tags
             const selectedTags = Array.from(document.querySelectorAll('.tag-checkbox:checked'))
                 .map(cb => cb.value);
-            
-            // Get status
             const status = document.querySelector('input[name="status"]:checked').value;
             const publishedDate = status === 'published' ? document.getElementById('publishedDate').value : null;
             
@@ -1613,7 +1717,6 @@
             try {
                 const url = id ? `/api/events/${id}` : '/api/events';
                 const method = id ? 'PUT' : 'POST';
-
                 const response = await fetch(url, {
                     method,
                     headers: { 'Content-Type': 'application/json' },
@@ -1653,17 +1756,12 @@
             }
         });
 
-        // Close modal when clicking outside
         document.getElementById('eventModal').addEventListener('click', (e) => {
-            if (e.target.id === 'eventModal') {
-                closeModal();
-            }
+            if (e.target.id === 'eventModal') closeModal();
         });
 
         document.getElementById('contentModal').addEventListener('click', (e) => {
-            if (e.target.id === 'contentModal') {
-                closeContentModal();
-            }
+            if (e.target.id === 'contentModal') closeContentModal();
         });
     </script>
 </body>

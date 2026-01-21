@@ -26,28 +26,35 @@ Launch the web dashboard from Claude Desktop:
 ```
 
 **Calendar Views:**
-- Month view - Full calendar grid with events
-- Week view - Hourly time slots (8am-8pm)
-- List view - All events with full details
+- **Month view** - Full calendar grid with color-coded events
+- **Week view** - Hourly time slots (8am-8pm)
+- **List view** - Filterable list with search by status, tags, and date range
+
+**List View Filters:**
+- Status: All / Scheduled / Content Ready / Published
+- Tags: LinkedIn, Meeting, Deadline, Personal, Client, Internal
+- Date Range: All / Past / Today / This Week / This Month / Upcoming
 
 **Content Management:**
-- Write/edit article content directly in events
+- Write/edit LinkedIn posts directly in event descriptions
 - Character counter (100-3000 chars for LinkedIn)
 - "Post to LinkedIn" button - copies content and opens LinkedIn
-- Events with content show as green in calendar views
+- Green events = content ready (100+ characters)
+- Blue events = scheduled (under 100 characters)
+- Purple events = published
 
 **Statistics:**
 - Total events
 - Upcoming events
 - Events this month
-- Events with content
+- Events with content ready
 
 **Organization & Import/Export:**
 - Tag events (LinkedIn, Meeting, Deadline, Personal, Client, Internal)
 - Track scheduled vs published status
 - Import events from ICS or JSON files
 - Export all events as ICS or JSON
-- Color-coded status indicators (blue=scheduled, green=published)
+- Individual event ICS downloads
 - Quick "Mark as published" checkbox
 
 ## Installation
@@ -83,6 +90,7 @@ Edit your Claude Desktop config file:
 
 Add this configuration (replace with your actual path):
 
+**Windows:**
 ```json
 {
   "mcpServers": {
@@ -94,30 +102,46 @@ Add this configuration (replace with your actual path):
 }
 ```
 
+**macOS/Linux:**
+```json
+{
+  "mcpServers": {
+    "mgc-calendar": {
+      "command": "node",
+      "args": ["/Users/YourUsername/Documents/GitHub/mgc-calendar-mcp/build/index.js"]
+    }
+  }
+}
+```
+
 5. **Restart Claude Desktop**
 
-**Note:** The dashboard will automatically start when Claude Desktop launches. It will open in your default browser after a few seconds. If it doesn't, you can manually launch it with the `launch_dashboard` tool.
+The MCP server will now be available. Launch the dashboard using the `launch_dashboard` tool.
 
 ## Usage
 
 ### Quick Start with Dashboard
 
-The easiest way to use MGC Calendar is through the web dashboard:
+The easiest way to use MGC Calendar is through the web dashboard.
 
-**The dashboard automatically starts when you launch Claude Desktop!** Just open http://localhost:3737 in your browser after starting Claude Desktop.
-
-Or manually launch it from Claude Desktop:
+**Launch it from Claude:**
 ```
 "Launch the dashboard"
 ```
 
-1. **Click any event** in the calendar to edit it
+Then open http://localhost:3737 in your browser.
 
-3. **Add your LinkedIn post** to the Description field (this is your formatted article)
+**Creating & Managing Content:**
 
-4. **Click "📤 Post to LinkedIn"** - it copies the description and opens LinkedIn
+1. **Click any date** in the calendar to create a new event
 
-5. **Paste (Ctrl+V or Cmd+V)** in LinkedIn and publish
+2. **Add your LinkedIn post** to the Description field (100-3000 characters)
+
+3. **Click "📤 Post to LinkedIn"** - it copies the description and opens LinkedIn
+
+4. **Paste (Ctrl+V or Cmd+V)** in LinkedIn and publish
+
+5. **Mark as published** when done
 
 **That's it!** No manual ICS imports needed when using the dashboard.
 
@@ -126,13 +150,13 @@ Or manually launch it from Claude Desktop:
 You can also create events by talking to Claude:
 
 ```
-"Create a calendar event for Article 2 writing session on January 22, 2026 at 2pm"
+"Create a calendar event for LinkedIn post on January 22, 2026 at 9am"
 ```
 
 Claude will:
 1. Create the event in the database
 2. Generate an ICS file
-3. Give you the file path to import
+3. Give you the file path to import into your calendar app
 
 ### Manage Events
 
@@ -151,38 +175,31 @@ Claude will:
 "Delete event ID 5"
 ```
 
-### Use the Dashboard
+### Dashboard Features
 
-**Launch dashboard:**
-```
-"Launch the dashboard"
-```
+**View & Filter:**
+- Switch between Month, Week, and List views
+- Filter by status (All / Scheduled / Content Ready / Published)
+- Filter by tags (LinkedIn, Meeting, Deadline, etc.)
+- Filter by date range (Past, Today, This Week, etc.)
 
-**Then:**
+**Create & Edit:**
+- Click empty day to create event on that date
+- Click any event to edit details
+- Add description (your LinkedIn post content)
+- Add tags for organization
+- Set as scheduled or published
 
-**Post to LinkedIn:**
-1. Click any event in calendar view
-2. Paste your formatted article in the Description field
-3. Click "📤 Post to LinkedIn" button
-4. Paste in LinkedIn and publish
-
-**Create new events:**
-- Click empty day in Month view to create event on that date
-- Or click "+ Create Event" button
-
-**Edit events:**
-- Click any event in Month/Week/List view to edit
-- Update title, description, dates, times
-- Save changes
-
-**The Description field is your LinkedIn post** - keep it 100-3000 characters and formatted exactly how you want it to appear on LinkedIn.
-
-**The Content field is optional** - use it for article drafts, notes, or additional content you don't want to post.
+**Export & Download:**
+- Export all events via Export button (choose ICS or JSON)
+- Download individual event ICS files from edit modal
+- Import events from ICS or JSON files
 
 ## File Locations
 
 - **Database**: `~/.mgc-calendar/events.db`
 - **ICS files**: `~/.mgc-calendar/ics-files/`
+- **Dashboard**: `http://localhost:3737`
 
 ## MCP Tools
 
@@ -235,23 +252,23 @@ Just works, no complex setup.
 1. You ask Claude to create a calendar event
 2. MGC Calendar generates an ICS file with a unique UID
 3. Event is saved to local database for tracking
-4. You import the ICS file into your calendar app
+4. You can import the ICS file into your calendar app (optional)
 
 **Updating an event:**
 1. You ask Claude to update an event
 2. MGC Calendar generates a new ICS file with the SAME UID
 3. Database is updated
-4. You import the new ICS file
+4. You import the new ICS file (optional)
 5. Your calendar app recognizes the UID and updates the existing event
 
 **Deleting an event:**
 1. You ask Claude to delete an event
 2. MGC Calendar generates a cancellation ICS file
 3. Database marks event as deleted
-4. You import the cancellation
+4. You import the cancellation (optional)
 5. Your calendar app removes the event
 
-The UID is the secret. It's how calendar applications know these aren't new events - they're updates to existing ones. This is part of the ICS standard. It's been working perfectly for 27 years.
+The UID is the secret. It's how calendar applications know these aren't new events - they're updates to existing ones. This is part of the ICS standard.
 
 ## Why MGC Calendar?
 
@@ -265,26 +282,11 @@ MGC Calendar uses the universal ICS standard that every calendar app already sup
 
 **Old standard beats new API.**
 
-## Roadmap
-
-**v1.1 (in progress):**
-- ✅ Web-based dashboard for visual management
-- ✅ Article content storage and editing
-- ✅ LinkedIn posting integration
-- ⏳ Bulk import/export operations
-- ⏳ Search and filtering
-
-**v2.0 (planned):**
-- Calendar sync without manual ICS imports
-- Recurring events support
-- Event categories and tags
-- Analytics on writing schedule
-
 ## Technical Details
 
 **Stack:**
 - Node.js + TypeScript
-- better-sqlite3 for local database
+- sql.js for local database
 - ical-generator for ICS files
 - Native HTTP server for dashboard
 - @modelcontextprotocol/sdk for Claude integration
@@ -301,12 +303,6 @@ The `@mgc-calendar` domain part isn't a real domain. It doesn't need to be. It j
 MGC = Murrell + [Collaborator] + Claude
 
 Part of the MGC toolkit of practical AI tools built to solve real problems, not add complexity.
-
-This is tool #9 in the series. Each tool follows the same pattern:
-1. Find a real problem
-2. Look for the simplest solution
-3. Ignore "modern best practices" if they add unnecessary complexity
-4. Ship something that works
 
 ## License
 
@@ -327,10 +323,19 @@ Issues and pull requests welcome!
 
 **Dashboard won't launch:**
 ```bash
-# Manually start it
+# Launch via Claude Desktop
+"Launch the dashboard"
+
+# Or manually start it
 npm run dashboard
 # Then open http://localhost:3737
 ```
+
+**Button still showing after update:**
+Clear Claude Desktop cache:
+- Windows: Delete `%APPDATA%\Claude\Cache`
+- macOS: Delete `~/Library/Caches/Claude`
+- Then restart Claude Desktop
 
 **Database errors:**
 Delete and recreate:
@@ -348,14 +353,23 @@ Make sure you're importing from:
 **Events not showing in dashboard:**
 1. Check browser console (F12)
 2. Verify database exists: `~/.mgc-calendar/events.db`
-3. Restart dashboard: Close tab, run `npm run dashboard`
+3. Restart dashboard from Claude Desktop
 
 ## Version History
 
+**v1.2.0** (January 21, 2026)
+- Added "Content Ready" filter to list view
+- Improved list view filters (Status, Tags, Date Range)
+- Fixed ICS file regeneration - auto-generates missing files on download
+- Removed "Download All ICS" button (use Export → ICS instead)
+- Improved calendar layout - wider container, better spacing
+- Fixed logging - all logs now go to stderr (no more JSON errors)
+- Better color coding in calendar views
+
 **v1.1.1** (January 2026)
-- Fixed database initialization errors - database now auto-initializes before all operations
+- Fixed database initialization errors
 - Dashboard now auto-starts when MCP server starts
-- Improved error handling and logging for dashboard startup
+- Improved error handling and logging
 
 **v1.1.0** (January 2026)
 - Bulk import/export (ICS and JSON formats)
@@ -371,11 +385,10 @@ Make sure you're importing from:
 - Web dashboard with calendar views
 - Article content storage
 - LinkedIn posting integration
-- Launch from Claude Desktop
 
 ## Support
 
 For issues, questions, or feature requests:
 - Open an issue on GitHub
-- Check the guide for detailed development process
-- Review Article 2: "I Built a Calendar Manager in 4 Hours"
+- Check TROUBLESHOOTING.md for common problems
+- Review the guide for detailed development process

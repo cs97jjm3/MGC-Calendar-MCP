@@ -47,26 +47,26 @@ function serveStaticFile(filepath: string, res: http.ServerResponse) {
   const fullPath = path.normalize(path.join(dashboardDir, filepath));
   const normalizedDashboardDir = path.normalize(dashboardDir);
   
-  console.log(`Static file request:`);
-  console.log(`  filepath: ${filepath}`);
-  console.log(`  dashboardDir: ${normalizedDashboardDir}`);
-  console.log(`  fullPath: ${fullPath}`);
-  console.log(`  exists: ${fs.existsSync(fullPath)}`);
+  console.error(`Static file request:`);
+  console.error(`  filepath: ${filepath}`);
+  console.error(`  dashboardDir: ${normalizedDashboardDir}`);
+  console.error(`  fullPath: ${fullPath}`);
+  console.error(`  exists: ${fs.existsSync(fullPath)}`);
   
   // Security: prevent directory traversal
   if (!fullPath.startsWith(normalizedDashboardDir)) {
-    console.log(`  BLOCKED: Path traversal attempt`);
-    res.writeHead(403);
-    res.end('Forbidden');
-    return;
+  console.error(`  BLOCKED: Path traversal attempt`);
+  res.writeHead(403);
+  res.end('Forbidden');
+  return;
   }
   
   // Check if file exists
   if (!fs.existsSync(fullPath)) {
-    console.log(`  ERROR: File not found`);
-    res.writeHead(404);
-    res.end(`Not found: ${filepath}`);
-    return;
+  console.error(`  ERROR: File not found`);
+  res.writeHead(404);
+  res.end(`Not found: ${filepath}`);
+  return;
   }
   
   // Determine content type
@@ -86,16 +86,16 @@ function serveStaticFile(filepath: string, res: http.ServerResponse) {
   };
   
   const contentType = contentTypes[ext] || 'application/octet-stream';
-  console.log(`  contentType: ${contentType}`);
+  console.error(`  contentType: ${contentType}`);
   
   try {
     // Read and serve file
     const content = fs.readFileSync(fullPath);
-    console.log(`  SUCCESS: Serving ${content.length} bytes`);
+    console.error(`  SUCCESS: Serving ${content.length} bytes`);
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(content);
   } catch (error) {
-    console.log(`  ERROR: ${error}`);
+    console.error(`  ERROR: ${error}`);
     res.writeHead(500);
     res.end(`Error reading file: ${error}`);
   }
@@ -123,6 +123,51 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
     const events = listEvents();
     res.writeHead(200);
     res.end(JSON.stringify(events));
+    return;
+  }
+
+  // GET /api/events/all/ics - Download all events as single ICS (MUST come before :id routes)
+  if (req.method === 'GET' && url.pathname === '/api/events/all/ics') {
+    const events = listEvents();
+    if (events.length === 0) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'No events found' }));
+      return;
+    }
+
+    // Combine all ICS files into one
+    const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
+    let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
+    
+    events.forEach(event => {
+      const icsPath = path.join(icsDir, `${event.uid}.ics`);
+      
+      // Regenerate ICS if it doesn't exist
+      if (!fs.existsSync(icsPath)) {
+        console.error(`Regenerating ICS for event ${event.id}`);
+        try {
+          generateICS(event);
+        } catch (error) {
+          console.error(`Failed to generate ICS for event ${event.id}:`, error);
+        }
+      }
+      
+      if (fs.existsSync(icsPath)) {
+        const icsContent = fs.readFileSync(icsPath, 'utf-8');
+        // Extract VEVENT section from each file
+        const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
+        if (veventMatch) {
+          combinedICS += veventMatch[0] + '\r\n';
+        }
+      }
+    });
+    
+    combinedICS += 'END:VCALENDAR\r\n';
+    
+    res.setHeader('Content-Type', 'text/calendar');
+    res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-all-events.ics"');
+    res.writeHead(200);
+    res.end(combinedICS);
     return;
   }
 
@@ -204,6 +249,20 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
     const event = getEvent(id);
     if (event) {
       const icsPath = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files', `${event.uid}.ics`);
+      
+      // If ICS file doesn't exist, regenerate it
+      if (!fs.existsSync(icsPath)) {
+        console.error(`ICS file not found for event ${id}, regenerating...`);
+        try {
+          generateICS(event);
+        } catch (error) {
+          console.error('Failed to generate ICS:', error);
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: 'Failed to generate ICS file' }));
+          return;
+        }
+      }
+      
       if (fs.existsSync(icsPath)) {
         const icsContent = fs.readFileSync(icsPath, 'utf-8');
         res.setHeader('Content-Type', 'text/calendar');
@@ -211,8 +270,8 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
         res.writeHead(200);
         res.end(icsContent);
       } else {
-        res.writeHead(404);
-        res.end(JSON.stringify({ error: 'ICS file not found' }));
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Failed to create ICS file' }));
       }
     } else {
       res.writeHead(404);
@@ -236,6 +295,17 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
     
     events.forEach(event => {
       const icsPath = path.join(icsDir, `${event.uid}.ics`);
+      
+      // Regenerate ICS if it doesn't exist
+      if (!fs.existsSync(icsPath)) {
+        console.error(`Regenerating ICS for event ${event.id}`);
+        try {
+          generateICS(event);
+        } catch (error) {
+          console.error(`Failed to generate ICS for event ${event.id}:`, error);
+        }
+      }
+      
       if (fs.existsSync(icsPath)) {
         const icsContent = fs.readFileSync(icsPath, 'utf-8');
         // Extract VEVENT section from each file
@@ -351,7 +421,7 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url || '', `http://localhost:${PORT}`);
   
-  console.log(`Request: ${req.method} ${url.pathname}`);
+  console.error(`Request: ${req.method} ${url.pathname}`);
   
   if (url.pathname.startsWith('/api/')) {
     await handleAPI(req, res);
@@ -359,7 +429,7 @@ const server = http.createServer(async (req, res) => {
     serveHTML(res);
   } else {
     // Serve static files (images, css, js, etc.)
-    console.log(`Attempting to serve static file: ${url.pathname}`);
+    console.error(`Attempting to serve static file: ${url.pathname}`);
     serveStaticFile(url.pathname, res);
   }
 });
@@ -368,15 +438,15 @@ const server = http.createServer(async (req, res) => {
 async function startServer() {
   try {
     await ensureDb();
-    console.log('Database initialized');
+    console.error('Database initialized');
   } catch (error) {
     console.error('Failed to initialize database:', error);
     process.exit(1);
   }
   
   server.listen(PORT, () => {
-    console.log(`MGC Calendar Dashboard running at http://localhost:${PORT}`);
-    console.log('Press Ctrl+C to stop');
+    console.error(`MGC Calendar Dashboard running at http://localhost:${PORT}`);
+    console.error('Press Ctrl+C to stop');
   });
 }
 
