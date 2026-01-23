@@ -118,6 +118,39 @@ Add this configuration (replace with your actual path):
 
 The MCP server will now be available. Launch the dashboard using the `launch_dashboard` tool.
 
+### Dashboard Auto-Launch Behavior
+
+By default, the MGC Calendar dashboard:
+- **Starts automatically** when Claude Desktop launches
+- **Opens your browser** automatically to http://localhost:3737
+
+This means you'll see the dashboard every time you start Claude Desktop.
+
+**To disable browser auto-launch** (dashboard still runs, just doesn't open browser):
+
+1. Open `src/index.ts` in your editor
+2. Find the "Auto-start dashboard" section (around line 415)
+3. Comment out the `setTimeout` block that opens the browser:
+
+```typescript
+// Browser auto-launch disabled - dashboard runs at http://localhost:3737
+// Uncomment below to re-enable auto-launch
+// setTimeout(() => {
+//   const url = 'http://localhost:3737';
+//   const start = process.platform === 'darwin' ? 'open' :
+//                process.platform === 'win32' ? 'start' : 'xdg-open';
+//   log('DEBUG', `Opening browser: ${start} ${url}`);
+//   spawn(start, [url], { shell: true });
+// }, 3000);
+```
+
+4. Rebuild the project: `npm run build`
+5. Restart Claude Desktop
+
+The dashboard will still run at http://localhost:3737 - you just navigate to it manually when you want to use it.
+
+**To re-enable auto-launch**, uncomment those lines and rebuild.
+
 ## Usage
 
 ### Quick Start with Dashboard

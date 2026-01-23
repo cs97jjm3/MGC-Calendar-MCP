@@ -43,6 +43,18 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .header-content img {
+            width: 80px;
+            height: 80px;
+        }
+
         h1 {
             font-size: 28px;
             margin-bottom: 5px;
@@ -752,8 +764,11 @@
 </head>
 <body>
     <div class="container">
-       <header><img src="https://github.com/cs97jjm3/MGC-Calendar-MCP/blob/main/dashboard/logo.png?raw=true" alt="MGC Logo" width=200 height=200>
-   <h1> Claude Desktop Calendar Dashboard</h1>
+       <header>
+    <div class="header-content">
+        <img src="https://github.com/cs97jjm3/MGC-Calendar-MCP/blob/main/dashboard/logo.png?raw=true" alt="MGC Logo">
+        <h1>Claude Desktop Calendar Dashboard</h1>
+    </div>
 
     <p class="subtitle">
         Plan work, hold content, publish without OAuth
@@ -951,7 +966,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Tags</label>
+                    <label>Tags <button type="button" class="btn btn-secondary btn-small" onclick="suggestTags()" style="margin-left: 10px;">✨ Suggest Tags</button></label>
                     <div class="tags-selector">
                         <label><input type="checkbox" class="tag-checkbox" value="LinkedIn"> LinkedIn</label>
                         <label><input type="checkbox" class="tag-checkbox" value="Meeting"> Meeting</label>
@@ -1542,6 +1557,44 @@
 
         function closeModal() {
             document.getElementById('eventModal').classList.remove('active');
+        }
+
+        async function suggestTags() {
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            
+            if (!title) {
+                alert('Please enter a title first');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/suggest-tags', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description })
+                });
+                
+                if (!response.ok) throw new Error('Failed to suggest tags');
+                
+                const data = await response.json();
+                
+                // Check the suggested tag checkboxes
+                document.querySelectorAll('.tag-checkbox').forEach(checkbox => {
+                    if (data.tags.includes(checkbox.value)) {
+                        checkbox.checked = true;
+                    }
+                });
+                
+                if (data.tags.length > 0) {
+                    alert(`✨ Suggested tags: ${data.tags.join(', ')}`);
+                } else {
+                    alert('No tag suggestions found. Try adding more keywords to the title or description.');
+                }
+            } catch (error) {
+                console.error('Failed to suggest tags:', error);
+                alert('Failed to suggest tags');
+            }
         }
 
         async function downloadEventICS() {

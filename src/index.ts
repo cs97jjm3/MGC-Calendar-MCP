@@ -505,14 +505,15 @@ async function main() {
         
         log('INFO', 'Dashboard process spawned');
         
-        // Wait longer and verify server is ready before opening browser
-        setTimeout(() => {
-          const url = 'http://localhost:3737';
-          const start = process.platform === 'darwin' ? 'open' :
-                       process.platform === 'win32' ? 'start' : 'xdg-open';
-          log('DEBUG', `Opening browser: ${start} ${url}`);
-          spawn(start, [url], { shell: true });
-        }, 3000); // Increased delay to 3 seconds
+        // Browser auto-launch disabled - dashboard runs at http://localhost:3737
+        // Uncomment below to re-enable auto-launch
+        // setTimeout(() => {
+        //   const url = 'http://localhost:3737';
+        //   const start = process.platform === 'darwin' ? 'open' :
+        //                process.platform === 'win32' ? 'start' : 'xdg-open';
+        //   log('DEBUG', `Opening browser: ${start} ${url}`);
+        //   spawn(start, [url], { shell: true });
+        // }, 3000);
       } else {
         log('WARN', `Dashboard not found at: ${dashboardPath}, skipping auto-start`);
       }

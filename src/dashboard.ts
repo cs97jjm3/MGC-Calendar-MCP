@@ -26,7 +26,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents, ensureDb } from './database.js';
+import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents, ensureDb, suggestTags } from './database.js';
 import { generateICS, parseICS } from './ics-generator.js';
 import type { CreateEventInput } from './types.js';
 
@@ -411,6 +411,24 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
       res.writeHead(400);
       res.end(JSON.stringify({ error: 'Invalid format. Use json or ics.' }));
     }
+    return;
+  }
+
+  // POST /api/suggest-tags - Suggest tags based on title and description
+  if (req.method === 'POST' && url.pathname === '/api/suggest-tags') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { title, description } = JSON.parse(body);
+        const suggestions = suggestTags(title || '', description || '');
+        res.writeHead(200);
+        res.end(JSON.stringify({ tags: suggestions }));
+      } catch (error) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid input' }));
+      }
+    });
     return;
   }
 

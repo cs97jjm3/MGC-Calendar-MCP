@@ -322,5 +322,29 @@ export function exportEvents(): CalendarEvent[] {
   return listEvents();
 }
 
+export function suggestTags(title: string, description: string = ''): string[] {
+  const text = `${title} ${description}`.toLowerCase();
+  const suggestions: string[] = [];
+  
+  // Tag patterns
+  const patterns = {
+    'LinkedIn': ['linkedin', 'post', 'article', 'content', 'publish', 'social media'],
+    'Meeting': ['meeting', 'call', 'zoom', 'teams', 'discussion', 'sync', 'standup', 'catch up'],
+    'Deadline': ['deadline', 'due', 'submit', 'delivery', 'complete by', 'finish by'],
+    'Personal': ['personal', 'appointment', 'vacation', 'holiday', 'day off', 'doctor'],
+    'Client': ['client', 'customer', 'external', 'partner', 'vendor'],
+    'Internal': ['internal', 'team', 'staff', 'company', 'organization']
+  };
+  
+  // Check each tag pattern
+  for (const [tag, keywords] of Object.entries(patterns)) {
+    if (keywords.some(keyword => text.includes(keyword))) {
+      suggestions.push(tag);
+    }
+  }
+  
+  return suggestions;
+}
+
 // Export the initialization function
 export { ensureDb };
