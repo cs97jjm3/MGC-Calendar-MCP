@@ -1056,7 +1056,18 @@
             document.querySelectorAll('input[name="status"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
                     const publishedGroup = document.getElementById('published-date-group');
-                    publishedGroup.style.display = e.target.value === 'published' ? 'block' : 'none';
+                    const publishedDateInput = document.getElementById('publishedDate');
+                    
+                    if (e.target.value === 'published') {
+                        publishedGroup.style.display = 'block';
+                        // Auto-fill today's date if field is empty
+                        if (!publishedDateInput.value) {
+                            const today = new Date().toISOString().split('T')[0];
+                            publishedDateInput.value = today;
+                        }
+                    } else {
+                        publishedGroup.style.display = 'none';
+                    }
                 });
             });
         });

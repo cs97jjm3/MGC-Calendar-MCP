@@ -1,5 +1,10 @@
 # MGC Calendar MCP
 
+[![CI](https://github.com/cs97jjm3/mgc-calendar-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/cs97jjm3/mgc-calendar-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
+
 Universal calendar manager for Claude using ICS files - **no OAuth required**.
 
 ## What it does
@@ -323,6 +328,7 @@ MGC Calendar uses the universal ICS standard that every calendar app already sup
 - ical-generator for ICS files
 - Native HTTP server for dashboard
 - @modelcontextprotocol/sdk for Claude integration
+- Vitest for testing
 
 **UID Format:**
 ```
@@ -330,6 +336,30 @@ mgc-event-{timestamp}-{random}@mgc-calendar
 ```
 
 The `@mgc-calendar` domain part isn't a real domain. It doesn't need to be. It just needs to be unique to this system.
+
+## Development
+
+**Running tests:**
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+**Building:**
+```bash
+npm run build
+```
+
+**Development mode:**
+```bash
+npm run dev
+```
 
 ## About MGC
 
@@ -389,6 +419,14 @@ Make sure you're importing from:
 3. Restart dashboard from Claude Desktop
 
 ## Version History
+
+**v1.3.0** (January 27, 2026)
+- Added comprehensive test suite (78 automated tests)
+- 85%+ code coverage on critical modules
+- GitHub Actions CI/CD for automated testing
+- Testing documentation and guidelines
+- Status badges in README
+- Improved code quality and maintainability
 
 **v1.2.0** (January 21, 2026)
 - Added "Content Ready" filter to list view

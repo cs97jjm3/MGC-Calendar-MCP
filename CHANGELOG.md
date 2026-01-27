@@ -2,6 +2,58 @@
 
 All notable changes to MGC Calendar MCP will be documented in this file.
 
+## [1.3.0] - 2026-01-27
+
+### Added
+- **Comprehensive Test Suite:** 78 automated tests covering all core functionality
+  - 39 tests for database operations (CRUD, UID generation, tags, import/export)
+  - 16 tests for ICS generation and parsing
+  - 23 integration tests for end-to-end workflows
+- **Test Coverage:** ~85% coverage on critical modules (database.ts, ics-generator.ts)
+- **Testing Infrastructure:** Vitest 4.0 with coverage reporting
+- **Test Scripts:** `npm test`, `npm run test:watch`, `npm run test:coverage`
+- **CI/CD:** GitHub Actions workflow for automated testing on Node 18/20/22
+- **Documentation:** TESTING_GUIDE.md with comprehensive testing guidelines
+- **Status Badges:** Added CI, license, Node.js version badges to README
+
+### Changed
+- **CONTRIBUTING.md:** Added automated testing section with coverage requirements
+- **Test Configuration:** Configured Vitest for sequential execution to prevent database conflicts
+- **Code Quality:** Improved test isolation and cleanup
+
+### Developer Experience
+- Professional test suite ensures code quality
+- CI/CD automatically runs tests on all PRs
+- Coverage reports help identify untested code
+- Watch mode for test-driven development
+- Clear testing guidelines for contributors
+
+## [1.2.1] - 2026-01-27
+
+### Added
+- **Testing Infrastructure:** Added Vitest testing framework
+- **Test Suite:** Comprehensive integration tests for database operations (17 tests covering CRUD, edge cases)
+- **Test Scripts:** `npm test`, `npm run test:watch`, `npm run test:coverage`
+- **Port Check:** Dashboard auto-start now checks if port 3737 is available before spawning process
+- **Helper Function:** `generateCombinedICS()` function to reduce code duplication
+
+### Changed
+- **Code Quality:** Extracted duplicate ICS generation logic into reusable helper function
+- **Dashboard Code:** Reduced dashboard.ts from ~450 lines to ~350 lines by removing duplication
+- **Error Handling:** Improved dashboard auto-start error messages with port availability checks
+- **Version Sync:** Updated manifest.json version to match package.json (1.2.0)
+
+### Fixed
+- **Code Duplication:** Removed three duplicate ICS generation blocks in dashboard.ts
+- **Version Mismatch:** Synced manifest.json version (was 1.1.2, now 1.2.0)
+- **Port Conflicts:** Dashboard no longer attempts to start if port 3737 is already in use
+
+### Developer Experience
+- Added vitest.config.ts for test configuration
+- Updated .gitignore to exclude test data directories
+- Enhanced README with Development section
+- Test coverage reporting available via `npm run test:coverage`
+
 ## [1.2.0] - 2026-01-21
 
 ### Added

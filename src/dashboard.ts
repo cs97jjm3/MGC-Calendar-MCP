@@ -28,12 +28,47 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents, ensureDb, suggestTags } from './database.js';
 import { generateICS, parseICS } from './ics-generator.js';
-import type { CreateEventInput } from './types.js';
+import type { CreateEventInput, CalendarEvent } from './types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const PORT = 3737;
+
+/**
+ * Generate a combined ICS file from multiple events
+ * Handles regeneration of missing ICS files automatically
+ */
+function generateCombinedICS(events: CalendarEvent[]): string {
+  const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
+  let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
+  
+  events.forEach(event => {
+    const icsPath = path.join(icsDir, `${event.uid}.ics`);
+    
+    // Regenerate ICS if it doesn't exist
+    if (!fs.existsSync(icsPath)) {
+      console.error(`Regenerating ICS for event ${event.id}`);
+      try {
+        generateICS(event);
+      } catch (error) {
+        console.error(`Failed to generate ICS for event ${event.id}:`, error);
+      }
+    }
+    
+    if (fs.existsSync(icsPath)) {
+      const icsContent = fs.readFileSync(icsPath, 'utf-8');
+      // Extract VEVENT section from each file
+      const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
+      if (veventMatch) {
+        combinedICS += veventMatch[0] + '\r\n';
+      }
+    }
+  });
+  
+  combinedICS += 'END:VCALENDAR\r\n';
+  return combinedICS;
+}
 
 function serveHTML(res: http.ServerResponse) {
   const htmlPath = path.join(__dirname, '..', 'dashboard', 'index.html');
@@ -135,34 +170,7 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
       return;
     }
 
-    // Combine all ICS files into one
-    const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
-    let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
-    
-    events.forEach(event => {
-      const icsPath = path.join(icsDir, `${event.uid}.ics`);
-      
-      // Regenerate ICS if it doesn't exist
-      if (!fs.existsSync(icsPath)) {
-        console.error(`Regenerating ICS for event ${event.id}`);
-        try {
-          generateICS(event);
-        } catch (error) {
-          console.error(`Failed to generate ICS for event ${event.id}:`, error);
-        }
-      }
-      
-      if (fs.existsSync(icsPath)) {
-        const icsContent = fs.readFileSync(icsPath, 'utf-8');
-        // Extract VEVENT section from each file
-        const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
-        if (veventMatch) {
-          combinedICS += veventMatch[0] + '\r\n';
-        }
-      }
-    });
-    
-    combinedICS += 'END:VCALENDAR\r\n';
+    const combinedICS = generateCombinedICS(events);
     
     res.setHeader('Content-Type', 'text/calendar');
     res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-all-events.ics"');
@@ -280,50 +288,7 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
     return;
   }
 
-  // GET /api/events/all/ics - Download all events as single ICS
-  if (req.method === 'GET' && url.pathname === '/api/events/all/ics') {
-    const events = listEvents();
-    if (events.length === 0) {
-      res.writeHead(404);
-      res.end(JSON.stringify({ error: 'No events found' }));
-      return;
-    }
 
-    // Combine all ICS files into one
-    const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
-    let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
-    
-    events.forEach(event => {
-      const icsPath = path.join(icsDir, `${event.uid}.ics`);
-      
-      // Regenerate ICS if it doesn't exist
-      if (!fs.existsSync(icsPath)) {
-        console.error(`Regenerating ICS for event ${event.id}`);
-        try {
-          generateICS(event);
-        } catch (error) {
-          console.error(`Failed to generate ICS for event ${event.id}:`, error);
-        }
-      }
-      
-      if (fs.existsSync(icsPath)) {
-        const icsContent = fs.readFileSync(icsPath, 'utf-8');
-        // Extract VEVENT section from each file
-        const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
-        if (veventMatch) {
-          combinedICS += veventMatch[0] + '\r\n';
-        }
-      }
-    });
-    
-    combinedICS += 'END:VCALENDAR\r\n';
-    
-    res.setHeader('Content-Type', 'text/calendar');
-    res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-all-events.ics"');
-    res.writeHead(200);
-    res.end(combinedICS);
-    return;
-  }
 
   // POST /api/events/:id/publish - Mark event as published
   if (req.method === 'POST' && url.pathname.match(/\/api\/events\/\d+\/publish$/)) {
@@ -386,22 +351,7 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
       res.writeHead(200);
       res.end(JSON.stringify(events, null, 2));
     } else if (format === 'ics') {
-      // Generate combined ICS file
-      const icsDir = path.join(process.env.HOME || process.env.USERPROFILE || '.', '.mgc-calendar', 'ics-files');
-      let combinedICS = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//MGC Calendar//EN\r\nCALSCALE:GREGORIAN\r\n';
-      
-      events.forEach(event => {
-        const icsPath = path.join(icsDir, `${event.uid}.ics`);
-        if (fs.existsSync(icsPath)) {
-          const icsContent = fs.readFileSync(icsPath, 'utf-8');
-          const veventMatch = icsContent.match(/BEGIN:VEVENT[\s\S]*?END:VEVENT/g);
-          if (veventMatch) {
-            combinedICS += veventMatch[0] + '\r\n';
-          }
-        }
-      });
-      
-      combinedICS += 'END:VCALENDAR\r\n';
+      const combinedICS = generateCombinedICS(events);
       
       res.setHeader('Content-Type', 'text/calendar');
       res.setHeader('Content-Disposition', 'attachment; filename="mgc-calendar-export.ics"');

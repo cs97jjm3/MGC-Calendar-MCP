@@ -49,6 +49,31 @@ npm run dashboard
 
 ### Testing Your Changes
 
+#### Automated Tests
+
+**Always run tests before submitting a PR:**
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode (for development)
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+**All tests must pass** before your PR can be merged.
+
+**Coverage requirements:**
+- Core modules (database.ts, ics-generator.ts): 85%+ coverage
+- New features should include tests
+- Bug fixes should include regression tests
+
+**Writing tests:**
+See `TESTING_GUIDE.md` for detailed testing guidelines and examples.
+
 #### Manual Testing
 
 1. **Test MCP tools via Claude Desktop:**
@@ -169,10 +194,10 @@ Fixes #123 (if applicable)
 ## Areas Where We Need Help
 
 ### High Priority
-- [ ] Unit tests for database operations
-- [ ] Integration tests for ICS generation
 - [ ] Error handling improvements
 - [ ] Input validation enhancements
+- [ ] More comprehensive integration tests
+- [ ] Performance testing with large datasets
 
 ### Medium Priority
 - [ ] Bulk import/export features

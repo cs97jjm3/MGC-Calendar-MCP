@@ -34,6 +34,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve as resolvePath } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import net from 'net';
 import * as db from './database.js';
 import { generateICS, getOutputDirectory } from './ics-generator.js';
 
@@ -47,6 +48,19 @@ function log(level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG', message: string, data?:
   } else {
     console.error(logMessage);
   }
+}
+
+// Check if a port is available
+function isPortAvailable(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.once('listening', () => {
+      server.close();
+      resolve(true);
+    });
+    server.listen(port);
+  });
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -472,12 +486,18 @@ async function main() {
         log('DEBUG', `Dashboard path: ${absoluteDashboardPath}`);
         log('DEBUG', `Working directory: ${__dirname}`);
         
-        // Spawn dashboard with proper working directory and error handling
-        const dashboardProcess = spawn('node', [absoluteDashboardPath], {
-          cwd: __dirname,
-          detached: true,
-          stdio: ['ignore', 'ignore', 'pipe'] // Capture stderr for errors
-        });
+        // Check if port 3737 is available
+        const portAvailable = await isPortAvailable(3737);
+        if (!portAvailable) {
+          log('WARN', 'Port 3737 already in use, dashboard already running or port blocked');
+          log('INFO', 'Skipping dashboard auto-start');
+        } else {
+          // Spawn dashboard with proper working directory and error handling
+          const dashboardProcess = spawn('node', [absoluteDashboardPath], {
+            cwd: __dirname,
+            detached: true,
+            stdio: ['ignore', 'ignore', 'pipe'] // Capture stderr for errors
+          });
         
         // Log any errors from the dashboard process
         dashboardProcess.stderr?.on('data', (data) => {
@@ -497,13 +517,14 @@ async function main() {
           }
         });
         
-        // Give process a moment to start, then unref
-        setTimeout(() => {
-          dashboardProcess.unref();
-          log('INFO', 'Dashboard process detached');
-        }, 500);
-        
-        log('INFO', 'Dashboard process spawned');
+          // Give process a moment to start, then unref
+          setTimeout(() => {
+            dashboardProcess.unref();
+            log('INFO', 'Dashboard process detached');
+          }, 500);
+          
+          log('INFO', 'Dashboard process spawned');
+        }
         
         // Browser auto-launch disabled - dashboard runs at http://localhost:3737
         // Uncomment below to re-enable auto-launch
