@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <!--
-  MGC Calendar Dashboard v1.3.0 - DRAG & DROP + TAG COLORS + SETTINGS
+  MGC Calendar Dashboard v1.2.0 - WITH FILTERS & LEGEND
   
   Enhanced features:
   - List view filtering (Status, Tags, Date Range)
   - Color legend on all views
   - Improved tooltips
-  - Drag & drop events between dates
-  - Tag-based color coding
-  - Customizable settings panel
   
   Author: James Murrell (MGC)
   License: MIT
@@ -763,108 +760,7 @@
                 flex: 1;
             }
         }
-    
-        /* Drag & Drop */
-        .dragging {
-            opacity: 0.5;
-            cursor: move;
-        }
-
-        .drag-over {
-            background: #dbeafe !important;
-            border: 2px dashed #2563eb;
-        }
-
-        .day-event, .week-event {
-            cursor: move;
-        }
-
-        .day-event:active, .week-event:active {
-            cursor: grabbing;
-        }
-
-        /* Settings Modal */
-        .settings-tabs {
-            display: flex;
-            gap: 10px;
-            border-bottom: 2px solid #e5e7eb;
-            margin-bottom: 20px;
-        }
-
-        .settings-tab {
-            padding: 10px 20px;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            font-weight: 500;
-            color: #64748b;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.2s;
-        }
-
-        .settings-tab.active {
-            color: #2563eb;
-            border-bottom-color: #2563eb;
-        }
-
-        .settings-tab:hover {
-            color: #1d4ed8;
-        }
-
-        .settings-panel {
-            display: none;
-        }
-
-        .settings-panel.active {
-            display: block;
-        }
-
-        .settings-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            margin-bottom: 10px;
-        }
-
-        .settings-item label {
-            font-weight: 500;
-            margin-bottom: 0;
-        }
-
-        .settings-item input[type="text"] {
-            width: 200px;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-        }
-
-        .settings-item input[type="color"] {
-            width: 60px;
-            height: 40px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .settings-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: flex-end;
-        }
-
-        .color-preview {
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
-            border: 1px solid #d1d5db;
-            margin-left: 10px;
-        }
-</style>
+    </style>
 </head>
 <body>
     <div class="container">
@@ -924,15 +820,25 @@
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
                 <button class="btn btn-secondary" onclick="showExportMenu()">📤 Export</button>
                 <button class="btn btn-success" onclick="showRescheduleModal()" title="Let AI optimize your LinkedIn posting schedule">✨ Smart LinkedIn Scheduler</button>
-                <button class="btn btn-secondary" onclick="showSettingsModal()" title="Customize tags and colors">⚙️ Settings</button>
                 <button class="btn" onclick="showCreateModal()">+ Create Event</button>
             </div>
         </div>
 
         <!-- Color Legend (shown on all views) -->
-        <div class="color-legend" id="colorLegend">
+        <div class="color-legend">
             <span class="legend-title">Event Colors:</span>
-            <!-- Will be populated by JavaScript -->
+            <div class="legend-item" title="Events without content (description under 100 chars)">
+                <div class="legend-color blue"></div>
+                <span>Scheduled</span>
+            </div>
+            <div class="legend-item" title="Events with content ready (description 100+ chars)">
+                <div class="legend-color green"></div>
+                <span>Content Ready</span>
+            </div>
+            <div class="legend-item" title="Events that have been published">
+                <div class="legend-color purple"></div>
+                <span>Published</span>
+            </div>
         </div>
 
         <!-- Month View -->
@@ -1124,39 +1030,6 @@
         </div>
     </div>
 
-
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h2>⚙️ Settings</h2>
-            </div>
-            
-            <div class="settings-tabs">
-                <button class="settings-tab active" onclick="switchSettingsTab('tags')">Tags</button>
-                <button class="settings-tab" onclick="switchSettingsTab('colors')">Colors</button>
-            </div>
-
-            <!-- Tags Panel -->
-            <div id="tagsPanel" class="settings-panel active">
-                <h3 style="margin-bottom: 15px;">Tag Names & Colors</h3>
-                <div id="tagSettings"></div>
-            </div>
-
-            <!-- Colors Panel -->
-            <div id="colorsPanel" class="settings-panel">
-                <h3 style="margin-bottom: 15px;">Status Colors</h3>
-                <div id="statusColorSettings"></div>
-            </div>
-
-            <div class="settings-actions">
-                <button type="button" class="btn btn-danger" onclick="resetSettings()">Reset to Defaults</button>
-                <button type="button" class="btn btn-secondary" onclick="closeSettingsModal()">Cancel</button>
-                <button type="button" class="btn" onclick="saveSettings()">Save Settings</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Reschedule Optimally Modal -->
     <div id="rescheduleModal" class="modal">
         <div class="modal-content large">
@@ -1229,279 +1102,10 @@
             date: 'all'
         };
 
-
-        // ============================================
-        // SETTINGS SYSTEM
-        // ============================================
-        const defaultSettings = {
-            tags: {
-                linkedin: { name: "LinkedIn", color: "#0077b5" },
-                meeting: { name: "Meeting", color: "#10b981" },
-                deadline: { name: "Deadline", color: "#ef4444" },
-                personal: { name: "Personal", color: "#8b5cf6" },
-                client: { name: "Client", color: "#f59e0b" },
-                internal: { name: "Internal", color: "#6b7280" }
-            },
-            colors: {
-                scheduled: "#2563eb",
-                contentReady: "#16a34a",
-                published: "#9C27B0"
-            }
-        };
-
-        let settings = null;
-
-        function loadSettings() {
-            const saved = localStorage.getItem('mgc_calendar_settings');
-            if (saved) {
-                try {
-                    settings = JSON.parse(saved);
-                } catch (e) {
-                    console.error('Failed to parse settings:', e);
-                    settings = JSON.parse(JSON.stringify(defaultSettings));
-                }
-            } else {
-                settings = JSON.parse(JSON.stringify(defaultSettings));
-            }
-        }
-
-        function saveSettingsToStorage() {
-            localStorage.setItem('mgc_calendar_settings', JSON.stringify(settings));
-        }
-
-        function resetSettings() {
-            if (!confirm('Reset all settings to defaults?')) return;
-            settings = JSON.parse(JSON.stringify(defaultSettings));
-            saveSettingsToStorage();
-            renderSettingsUI();
-            renderCurrentView();
-            alert('Settings reset to defaults!');
-        }
-
-        function getEventColor(event) {
-            const isPublished = event.status === 'published';
-            const hasContent = (event.description || '').trim().length >= 100;
-            const tags = (event.tags || '').split(',').map(t => t.trim().toLowerCase());
-
-            // Priority 1: Status colors
-            if (isPublished) {
-                return settings.colors.published;
-            }
-            if (hasContent) {
-                return settings.colors.contentReady;
-            }
-
-            // Priority 2: Tag colors (first non-LinkedIn tag)
-            for (const tag of tags) {
-                if (tag && tag !== 'linkedin' && settings.tags[tag]) {
-                    return settings.tags[tag].color;
-                }
-            }
-
-            // Default: scheduled color
-            return settings.colors.scheduled;
-        }
-
-        // ============================================
-        // SETTINGS UI
-        // ============================================
-        function showSettingsModal() {
-            renderSettingsUI();
-            document.getElementById('settingsModal').classList.add('active');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('active');
-        }
-
-        function switchSettingsTab(tab) {
-            document.querySelectorAll('.settings-tab').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.settings-panel').forEach(panel => panel.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            
-            if (tab === 'tags') {
-                document.getElementById('tagsPanel').classList.add('active');
-            } else if (tab === 'colors') {
-                document.getElementById('colorsPanel').classList.add('active');
-            }
-        }
-
-        function renderSettingsUI() {
-            // Render tag settings
-            const tagSettings = document.getElementById('tagSettings');
-            tagSettings.innerHTML = Object.entries(settings.tags).map(([key, tag]) => `
-                <div class="settings-item">
-                    <label>${key.charAt(0).toUpperCase() + key.slice(1)}</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="text" value="${tag.name}" 
-                               onchange="settings.tags['${key}'].name = this.value"
-                               placeholder="Tag name">
-                        <input type="color" value="${tag.color}" 
-                               onchange="settings.tags['${key}'].color = this.value; updateColorPreview(this)"
-                               style="width: 60px;">
-                        <div class="color-preview" style="background: ${tag.color};"></div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Render status color settings
-            const statusColorSettings = document.getElementById('statusColorSettings');
-            statusColorSettings.innerHTML = `
-                <div class="settings-item">
-                    <label>Scheduled (No Content)</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="color" value="${settings.colors.scheduled}" 
-                               onchange="settings.colors.scheduled = this.value; updateColorPreview(this)">
-                        <div class="color-preview" style="background: ${settings.colors.scheduled};"></div>
-                    </div>
-                </div>
-                <div class="settings-item">
-                    <label>Content Ready (100+ chars)</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="color" value="${settings.colors.contentReady}" 
-                               onchange="settings.colors.contentReady = this.value; updateColorPreview(this)">
-                        <div class="color-preview" style="background: ${settings.colors.contentReady};"></div>
-                    </div>
-                </div>
-                <div class="settings-item">
-                    <label>Published</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="color" value="${settings.colors.published}" 
-                               onchange="settings.colors.published = this.value; updateColorPreview(this)">
-                        <div class="color-preview" style="background: ${settings.colors.published};"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateColorPreview(input) {
-            const preview = input.nextElementSibling;
-            if (preview && preview.classList.contains('color-preview')) {
-                preview.style.background = input.value;
-            }
-        }
-
-        function saveSettings() {
-            saveSettingsToStorage();
-            closeSettingsModal();
-            renderCurrentView();
-            alert('✅ Settings saved successfully!');
-        }
-
-        function renderColorLegend() {
-            const legend = document.getElementById('colorLegend');
-            if (!legend) return;
-            
-            let html = '<span class="legend-title">Event Colors:</span>';
-            
-            // Status colors
-            html += `
-                <div class="legend-item" title="Events without content">
-                    <div class="legend-color" style="background: ${settings.colors.scheduled}"></div>
-                    <span>Scheduled</span>
-                </div>
-                <div class="legend-item" title="Events with 100+ char description">
-                    <div class="legend-color" style="background: ${settings.colors.contentReady}"></div>
-                    <span>Content Ready</span>
-                </div>
-                <div class="legend-item" title="Published events">
-                    <div class="legend-color" style="background: ${settings.colors.published}"></div>
-                    <span>Published</span>
-                </div>
-            `;
-            
-            // Tag colors (excluding LinkedIn)
-            Object.entries(settings.tags).forEach(([key, tag]) => {
-                if (key !== 'linkedin') {
-                    html += `
-                        <div class="legend-item" title="${tag.name} events">
-                            <div class="legend-color" style="background: ${tag.color}"></div>
-                            <span>${tag.name}</span>
-                        </div>
-                    `;
-                }
-            });
-            
-            legend.innerHTML = html;
-        }
-
-
-
-        // ============================================
-        // DRAG & DROP
-        // ============================================
-        let draggedEvent = null;
-
-        function makeDraggable(element, eventId) {
-            element.setAttribute('draggable', 'true');
-            
-            element.addEventListener('dragstart', (e) => {
-                draggedEvent = events.find(ev => ev.id === eventId);
-                element.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', element.innerHTML);
-            });
-
-            element.addEventListener('dragend', (e) => {
-                element.classList.remove('dragging');
-                draggedEvent = null;
-                // Remove all drag-over classes
-                document.querySelectorAll('.drag-over').forEach(el => {
-                    el.classList.remove('drag-over');
-                });
-            });
-        }
-
-        function makeDroppable(element, dateStr, timeStr = null) {
-            element.addEventListener('dragover', (e) => {
-                if (draggedEvent) {
-                    e.preventDefault();
-                    element.classList.add('drag-over');
-                }
-            });
-
-            element.addEventListener('dragleave', (e) => {
-                element.classList.remove('drag-over');
-            });
-
-            element.addEventListener('drop', async (e) => {
-                e.preventDefault();
-                element.classList.remove('drag-over');
-                
-                if (draggedEvent) {
-                    // Update event date/time
-                    draggedEvent.startDate = dateStr;
-                    if (timeStr !== null) {
-                        draggedEvent.startTime = timeStr;
-                    }
-
-                    // Save to server
-                    try {
-                        const response = await fetch(`/api/events/${draggedEvent.id}`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(draggedEvent)
-                        });
-
-                        if (response.ok) {
-                            await loadEvents();
-                        } else {
-                            alert('Failed to move event');
-                        }
-                    } catch (error) {
-                        console.error('Failed to move event:', error);
-                        alert('Failed to move event');
-                    }
-                }
-            });
-        }
-
         // ============================================
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
             loadEvents();
             
             document.getElementById('content').addEventListener('input', updateCharCount);
@@ -1541,7 +1145,6 @@
                 
                 renderCurrentView();
                 updateStats();
-                renderColorLegend();
             } catch (error) {
                 console.error('Failed to load events:', error);
             }
@@ -1715,19 +1318,6 @@
             
             document.getElementById('calendarGrid').innerHTML = 
                 '<div class="calendar-grid">' + html + '</div>';
-            
-            // Setup drag and drop
-            document.querySelectorAll('.day-event[data-event-id]').forEach(el => {
-                const eventId = parseInt(el.getAttribute('data-event-id'));
-                makeDraggable(el, eventId);
-            });
-            
-            document.querySelectorAll('.calendar-day').forEach(el => {
-                const dateStr = el.getAttribute('data-date');
-                if (dateStr) {
-                    makeDroppable(el, dateStr);
-                }
-            });
         }
 
         function renderDay(year, month, day, otherMonth = false, isToday = false) {
@@ -1742,24 +1332,25 @@
             if (dayEvents.length > 0) {
                 eventsHtml = '<div class="day-events">';
                 dayEvents.slice(0, 3).forEach(event => {
-                    const color = getEventColor(event);
                     const isPublished = event.status === 'published';
                     const hasContent = (event.description || '').trim().length >= 100;
                     
+                    let eventClass = 'day-event';
+                    let backgroundColor = '';
                     let tooltipText = event.title;
+                    
                     if (isPublished) {
+                        backgroundColor = 'background:#9C27B0';
                         tooltipText += ' (Published)';
                     } else if (hasContent) {
+                        eventClass += ' has-content';
                         tooltipText += ' (Content Ready)';
                     } else {
                         tooltipText += ' (Scheduled)';
                     }
                     
-                    eventsHtml += `<div class="day-event" 
-                                        style="background: ${color}" 
-                                        onclick="event.stopPropagation(); editEvent(${event.id})" 
-                                        title="${escapeHtml(tooltipText)}"
-                                        data-event-id="${event.id}">${escapeHtml(event.title)}</div>`;
+                    const style = backgroundColor ? ` style="${backgroundColor}"` : '';
+                    eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(tooltipText)}">${escapeHtml(event.title)}</div>`;
                 });
                 if (dayEvents.length > 3) {
                     eventsHtml += `<div class="day-event" style="background:#64748b" title="Click day to see all events">+${dayEvents.length - 3} more</div>`;
@@ -1768,7 +1359,7 @@
             }
             
             return `
-                <div class="${classes}" data-date="${dateStr}" onclick="createEventOnDate('${dateStr}')" title="Click to create event on this date">
+                <div class="${classes}" onclick="createEventOnDate('${dateStr}')" title="Click to create event on this date">
                     <div class="day-number">${day}</div>
                     ${eventsHtml}
                 </div>
@@ -1815,46 +1406,33 @@
                     
                     let eventsHtml = '';
                     dayEvents.forEach(event => {
-                        const color = getEventColor(event);
                         const isPublished = event.status === 'published';
                         const hasContent = (event.description || '').trim().length >= 100;
                         
+                        let eventClass = 'week-event';
+                        let backgroundColor = '';
                         let tooltipText = event.title;
+                        
                         if (isPublished) {
+                            backgroundColor = 'background:#9C27B0';
                             tooltipText += ' (Published)';
                         } else if (hasContent) {
+                            eventClass += ' has-content';
                             tooltipText += ' (Content Ready)';
                         } else {
                             tooltipText += ' (Scheduled)';
                         }
                         
-                        eventsHtml += `<div class="week-event" 
-                                            style="background: ${color}" 
-                                            onclick="event.stopPropagation(); editEvent(${event.id})" 
-                                            title="${escapeHtml(tooltipText)}"
-                                            data-event-id="${event.id}">${escapeHtml(event.title)}</div>`;
+                        const style = backgroundColor ? ` style="${backgroundColor}"` : '';
+                        eventsHtml += `<div class="${eventClass}"${style} onclick="event.stopPropagation(); editEvent(${event.id})" title="${escapeHtml(tooltipText)}">${escapeHtml(event.title)}</div>`;
                     });
                     
-                    html += `<div class="week-cell" data-date="${dateStr}" data-time="${hour}:00">${eventsHtml}</div>`;
+                    html += `<div class="week-cell">${eventsHtml}</div>`;
                 }
             }
             
             html += '</div>';
             document.getElementById('weekGrid').innerHTML = html;
-            
-            // Setup drag and drop for week view
-            document.querySelectorAll('.week-event[data-event-id]').forEach(el => {
-                const eventId = parseInt(el.getAttribute('data-event-id'));
-                makeDraggable(el, eventId);
-            });
-            
-            document.querySelectorAll('.week-cell').forEach(el => {
-                const dateStr = el.getAttribute('data-date');
-                const timeStr = el.getAttribute('data-time');
-                if (dateStr) {
-                    makeDroppable(el, dateStr, timeStr);
-                }
-            });
         }
 
         function renderListView() {
@@ -2463,11 +2041,6 @@
         // Click outside modal to close
         document.getElementById('rescheduleModal')?.addEventListener('click', (e) => {
             if (e.target.id === 'rescheduleModal') closeRescheduleModal();
-        });
-
-        // Click outside settings modal to close
-        document.getElementById('settingsModal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'settingsModal') closeSettingsModal();
         });
     </script>
 </body>

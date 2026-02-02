@@ -28,7 +28,9 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { listEvents, createEvent, updateEvent, deleteEvent, getEvent, markAsPublished, importEvents, exportEvents, ensureDb, suggestTags } from './database.js';
 import { generateICS, parseICS } from './ics-generator.js';
+import { analyzeSchedule } from './ai-scheduler.js';
 import type { CreateEventInput, CalendarEvent } from './types.js';
+import type { ScheduleSuggestion } from './ai-scheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -377,6 +379,64 @@ async function handleAPI(req: http.IncomingMessage, res: http.ServerResponse) {
       } catch (error) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: 'Invalid input' }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/reschedule-analyze - Analyze schedule and suggest improvements
+  if (req.method === 'POST' && url.pathname === '/api/reschedule-analyze') {
+    try {
+      const events = listEvents();
+      const analysis = analyzeSchedule(events);
+      res.writeHead(200);
+      res.end(JSON.stringify(analysis));
+    } catch (error) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: 'Analysis failed' }));
+    }
+    return;
+  }
+
+  // POST /api/reschedule-apply - Apply schedule suggestions
+  if (req.method === 'POST' && url.pathname === '/api/reschedule-apply') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { suggestions } = JSON.parse(body) as { suggestions: ScheduleSuggestion[] };
+        
+        let changed = 0;
+        let totalBoost = 0;
+        
+        suggestions.forEach(suggestion => {
+          const event = getEvent(suggestion.eventId);
+          if (event) {
+            const updated = updateEvent({
+              id: suggestion.eventId,
+              startDate: suggestion.newDate,
+              startTime: suggestion.newTime
+            });
+            
+            if (updated) {
+              generateICS(updated);
+              changed++;
+              totalBoost += suggestion.boost;
+            }
+          }
+        });
+        
+        const avgBoost = changed > 0 ? totalBoost / changed : 0;
+        
+        res.writeHead(200);
+        res.end(JSON.stringify({ 
+          success: true, 
+          changed, 
+          avgBoost: Math.round(avgBoost) 
+        }));
+      } catch (error) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Failed to apply changes' }));
       }
     });
     return;

@@ -2,31 +2,72 @@
 
 This roadmap outlines the planned features and improvements for MGC Calendar MCP. Dates are estimates and subject to change based on user feedback and priorities.
 
-## Current Version: 1.0.0
-Released: January 2026
+## Current Version: 1.3.0
+Released: January 27, 2026
 
-Full CRUD operations, web dashboard, LinkedIn integration, ICS file generation.
+Comprehensive test suite (78 tests), CI/CD pipeline, professional documentation.
 
 ---
 
-## Version 1.1 - Enhanced Dashboard
-**Released: January 2026**
+## Version 1.4 - UX Improvements
+**Target: February 2026**
 
-### Features Completed
-- ✅ Web dashboard with Month/Week/List views
-- ✅ Content editor with character counter
-- ✅ LinkedIn posting integration
-- ✅ Bulk import/export operations (ICS and JSON)
-- ✅ Event categories/tags (LinkedIn, Meeting, Deadline, Personal, Client, Internal)
-- ✅ Scheduled vs Published status tracking
-- ✅ "Mark as published" quick action
-- ✅ Published date tracking
+### Priority: AI-Powered Intelligent Scheduling
+- [ ] **"Reschedule Optimally" button** - AI analyzes and suggests better times
+  - Shows current schedule with engagement scores
+  - Suggests optimal times with reasoning ("Tuesday mornings get 40% more engagement")
+  - Preview before/after schedules side-by-side
+  - One-click to apply all suggestions
+  - "Undo" option if you don't like the changes
+- [ ] **Optimal time suggestions** - AI analyzes LinkedIn best practices and suggests posting times
+  - Tuesday-Thursday preferred (highest engagement)
+  - Morning slots (8-10am) or lunch (12-2pm) in user's timezone
+  - Avoid weekends, holidays, major events
+- [ ] **Smart spacing** - AI ensures posts are strategically spaced (2-3 days apart)
+- [ ] **Content-aware timing** - Different content types get different optimal times
+  - Technical deep-dives: Tuesday/Wednesday mornings
+  - Personal stories: Thursday afternoons
+  - Quick tips: Friday mornings
+- [ ] **Audience optimization** - Consider your audience's location and timezone
+- [ ] **Performance learning** - Track which times get best engagement, adjust recommendations
+- [ ] **Conflict detection** - "You already have a post on Tuesday, schedule for Wednesday instead?"
+- [ ] **Batch scheduling assistant** - "Schedule these 10 posts optimally over next month"
+- [ ] **Natural language scheduling** - "Schedule this for the next optimal slot" (AI picks best time)
 
-### Documentation
-- [ ] API documentation for dashboard endpoints
-- [ ] Architecture documentation
-- [ ] Contributing guidelines
-- [ ] Issue templates
+### Priority: Better Event Management UX
+- [ ] Drag-and-drop events between dates in calendar view
+- [ ] Quick-edit mode (click to edit inline without modal)
+- [ ] Event duplication ("Copy event" button)
+- [ ] Keyboard shortcuts (n=new, e=edit, d=delete, /=search)
+- [ ] Undo/redo for event operations
+- [ ] Bulk select and edit multiple events
+- [ ] Right-click context menus
+
+### Priority: Search Improvements
+- [ ] Full-text search across title, description, location, content
+- [ ] Search filters (date range, tags, status)
+- [ ] Search suggestions as you type
+- [ ] Recent searches dropdown
+- [ ] Save search queries
+- [ ] Highlight search terms in results
+
+### Priority: Overall UX
+- [ ] Dark mode toggle with system preference detection
+- [ ] Improved mobile responsiveness
+- [ ] Loading states and progress indicators
+- [ ] Toast notifications for actions ("Event created", "Event deleted")
+- [ ] Confirmation dialogs for destructive actions
+- [ ] Empty states with helpful guidance
+- [ ] Keyboard navigation throughout dashboard
+
+### Priority: Recurring Events
+- [ ] Daily, weekly, monthly patterns
+- [ ] Custom recurrence (every N days/weeks/months)
+- [ ] End after N occurrences or by date
+- [ ] Skip specific dates (exceptions)
+- [ ] Generate ICS with RRULE standard
+- [ ] Visual indicator for recurring events
+- [ ] "Edit series" vs "Edit this event" options
 
 ---
 
@@ -145,9 +186,9 @@ Optional synchronization with external calendars for users who want it.
 |---------|--------------|--------------|
 | 1.0.0   | Jan 2026 | Initial release, web dashboard, LinkedIn integration |
 | 1.1.0   | Jan 2026 | Import/export, tags, status tracking |
-| 1.2.0   | Mar 2026 (planned) | Dark mode, templates, UX improvements |
-| 2.0.0   | Q2 2026 (planned) | Auto-sync, recurring events, versioning |
-| 2.1.0   | Q3 2026 (planned) | Analytics, smart scheduling |
+| 1.3.0   | Jan 2026 | Test suite (78 tests), CI/CD, professional documentation |
+| 1.4.0   | Feb 2026 (planned) | UX improvements, search, recurring events |
+| 2.0.0   | Q2 2026 (planned) | Auto-sync, templates, analytics |
 | 3.0.0   | Q4 2026 (maybe) | Collaboration features (if demand exists) |
 
 ---
