@@ -694,12 +694,17 @@
         .tag-client { background: #FF9800; color: white; }
         .tag-internal { background: #607D8B; color: white; }
 
+        .status-draft {
+            border-left: 4px solid #f59e0b;
+            background-color: #fffbeb;
+        }
+
         .status-scheduled {
             border-left: 4px solid #2196F3;
         }
 
         .status-published {
-            border-left: 4px solid #4CAF50;
+            border-left: 4px solid #16a34a;
             background-color: #f1f8f4;
         }
 
@@ -973,8 +978,8 @@
                     <label>Status</label>
                     <select id="filterStatus" onchange="applyListFilters()">
                         <option value="all">All</option>
+                        <option value="draft">Draft</option>
                         <option value="scheduled">Scheduled</option>
-                        <option value="content-ready">Content Ready</option>
                         <option value="published">Published</option>
                     </select>
                 </div>
@@ -1075,6 +1080,7 @@
                 <div class="form-group">
                     <label>Status</label>
                     <div class="status-selector">
+                        <label><input type="radio" name="status" value="draft"> Draft</label>
                         <label><input type="radio" name="status" value="scheduled" checked> Scheduled</label>
                         <label><input type="radio" name="status" value="published"> Published</label>
                     </div>
@@ -1243,9 +1249,9 @@
                 internal: { name: "Internal", color: "#6b7280" }
             },
             colors: {
+                draft: "#f59e0b",
                 scheduled: "#2563eb",
-                contentReady: "#16a34a",
-                published: "#9C27B0"
+                published: "#16a34a"
             }
         };
 
@@ -1279,16 +1285,18 @@
         }
 
         function getEventColor(event) {
-            const isPublished = event.status === 'published';
-            const hasContent = (event.description || '').trim().length >= 100;
+            const status = event.status || 'scheduled';
             const tags = (event.tags || '').split(',').map(t => t.trim().toLowerCase());
 
             // Priority 1: Status colors
-            if (isPublished) {
+            if (status === 'published') {
                 return settings.colors.published;
             }
-            if (hasContent) {
-                return settings.colors.contentReady;
+            if (status === 'draft') {
+                return settings.colors.draft;
+            }
+            if (status === 'scheduled') {
+                return settings.colors.scheduled;
             }
 
             // Priority 2: Tag colors (first non-LinkedIn tag)
@@ -1349,7 +1357,15 @@
             const statusColorSettings = document.getElementById('statusColorSettings');
             statusColorSettings.innerHTML = `
                 <div class="settings-item">
-                    <label>Scheduled (No Content)</label>
+                    <label>Draft (Writing/Editing)</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="color" value="${settings.colors.draft}" 
+                               onchange="settings.colors.draft = this.value; updateColorPreview(this)">
+                        <div class="color-preview" style="background: ${settings.colors.draft};"></div>
+                    </div>
+                </div>
+                <div class="settings-item">
+                    <label>Scheduled (Queued in LinkedIn)</label>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <input type="color" value="${settings.colors.scheduled}" 
                                onchange="settings.colors.scheduled = this.value; updateColorPreview(this)">
@@ -1357,15 +1373,7 @@
                     </div>
                 </div>
                 <div class="settings-item">
-                    <label>Content Ready (100+ chars)</label>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <input type="color" value="${settings.colors.contentReady}" 
-                               onchange="settings.colors.contentReady = this.value; updateColorPreview(this)">
-                        <div class="color-preview" style="background: ${settings.colors.contentReady};"></div>
-                    </div>
-                </div>
-                <div class="settings-item">
-                    <label>Published</label>
+                    <label>Published (Live)</label>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <input type="color" value="${settings.colors.published}" 
                                onchange="settings.colors.published = this.value; updateColorPreview(this)">
@@ -1397,15 +1405,15 @@
             
             // Status colors
             html += `
-                <div class="legend-item" title="Events without content">
+                <div class="legend-item" title="Draft - Writing/editing">
+                    <div class="legend-color" style="background: ${settings.colors.draft}"></div>
+                    <span>Draft</span>
+                </div>
+                <div class="legend-item" title="Scheduled - Queued in LinkedIn">
                     <div class="legend-color" style="background: ${settings.colors.scheduled}"></div>
                     <span>Scheduled</span>
                 </div>
-                <div class="legend-item" title="Events with 100+ char description">
-                    <div class="legend-color" style="background: ${settings.colors.contentReady}"></div>
-                    <span>Content Ready</span>
-                </div>
-                <div class="legend-item" title="Published events">
+                <div class="legend-item" title="Published - Live on LinkedIn">
                     <div class="legend-color" style="background: ${settings.colors.published}"></div>
                     <span>Published</span>
                 </div>
@@ -1582,16 +1590,10 @@
             
             // Filter by status
             if (listFilters.status !== 'all') {
-                if (listFilters.status === 'content-ready') {
-                    // Content ready means: has 100+ char description and NOT published
-                    filtered = filtered.filter(e => {
-                        const hasContent = (e.description || '').trim().length >= 100;
-                        const notPublished = e.status !== 'published';
-                        return hasContent && notPublished;
-                    });
-                } else {
-                    filtered = filtered.filter(e => e.status === listFilters.status);
-                }
+                filtered = filtered.filter(e => {
+                    const status = e.status || 'scheduled';
+                    return status === listFilters.status;
+                });
             }
             
             // Filter by tag
@@ -1874,19 +1876,31 @@
 
             container.innerHTML = filtered.map(event => {
                 const hasContent = (event.description || '').trim().length >= 100;
-                const isPublished = event.status === 'published';
-                const statusClass = isPublished ? 'status-published' : 'status-scheduled';
+                const status = event.status || 'scheduled';
+                const isDraft = status === 'draft';
+                const isScheduled = status === 'scheduled';
+                const isPublished = status === 'published';
+                const statusClass = isPublished ? 'status-published' : (isDraft ? 'status-draft' : 'status-scheduled');
                 const tags = (event.tags || '').split(',').filter(t => t.trim());
                 const tagBadges = tags.map(tag => 
                     `<span class="tag-badge tag-${tag.toLowerCase()}">${tag}</span>`
                 ).join('');
+                
+                let statusBadge = '';
+                if (isDraft) {
+                    statusBadge = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Draft</span>';
+                } else if (isScheduled) {
+                    statusBadge = '<span style="background: #2563eb; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">Scheduled</span>';
+                } else if (isPublished) {
+                    statusBadge = '<span style="background: #16a34a; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-left: 8px;">✓ Published</span>';
+                }
                 
                 return `
                 <div class="event-item ${statusClass}">
                     <div class="event-details">
                         <h3>
                             ${escapeHtml(event.title)}
-                            ${isPublished ? '<span class="status-icon" title="Published">✓</span>' : ''}
+                            ${statusBadge}
                             ${hasContent ? '<span class="content-indicator" title="Has LinkedIn-ready content (100+ chars)">Has Content</span>' : ''}
                         </h3>
                         ${tagBadges ? `<div style="margin-top: 8px;">${tagBadges}</div>` : ''}
@@ -1896,11 +1910,12 @@
                                 ${event.startTime ? ' at ' + event.startTime : ''}
                                 ${event.allDay ? ' (All Day)' : ''}
                                 ${isPublished ? ` - Published ${formatDate(event.publishedDate || event.startDate)}` : ''}
+                                ${isDraft ? ' - Needs completion' : ''}
                             </div>
                             ${event.location ? `<div>📍 ${escapeHtml(event.location)}</div>` : ''}
                             ${event.description ? `<div>${escapeHtml(event.description).substring(0, 200)}${event.description.length > 200 ? '...' : ''}</div>` : ''}
                         </div>
-                        ${!isPublished ? `
+                        ${isScheduled ? `
                             <label class="publish-checkbox" title="Mark this event as published">
                                 <input type="checkbox" onchange="markPublished(${event.id})">
                                 Mark as published
